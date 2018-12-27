@@ -230,7 +230,7 @@ class Gtsrb:
 		#-# verbose_eval=0
 		scores = self.model.evaluate(X_test, y_test, verbose=verbose_eval)
 		## Speichert Modell 
-		self.saveModel(scnnModel)
+		self.saveModel("cnnGtsrbModel")
 		## ----------------------------------------
 		print(" Error(class Gtsrb, scnnModel)  : %.2f%%" % (100-scores[1]*100))
 		print(" Test accuracy            : %.2f%%" % (scores[1]*100,))
