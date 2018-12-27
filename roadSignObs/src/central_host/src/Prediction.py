@@ -19,7 +19,7 @@ import time
 import os
 ## os.environ['TF_CPP_MIN_LOG_LEVEL']='2'
 import tensorflow as tf
-import CnnModels  # mein Modul mit Klassen
+import Cnn       # mein Modul mit Klassen
 ## from thread import start_new_thread 
 ## from threading import Thread
 
@@ -73,16 +73,11 @@ def main():
 		# init Prediction
 		pred = Prediction()
 		## Instanz der Modul.Klasse mit cnn ...
-		''' Ziffern, Internetvariante '''
-		### cnn=CnnModels.MnistScnn()
-		''' Zffern -  HTW-Version '''
-		### cnn=CnnModels.MnistCnn()
-		''' Farbbilder mit 32 x 32 pixel  '''
-		cnn=CnnModels.Cifar10scnn()
-		##  Bild aus der Trainingsmenge wird ausgewaehlt 
+		'Verkehrsschilder Objekt=Modul.Klasse()   '''
+		cnn=Cnn.Gtsrb()
+		##  Bild aus der Trainingnge wird ausgewaehlt 
 		imageIndex=6 # wie in Camera Pseudo (es ist uebrigend die Ziffer 4 die zu erkennen ist)
 		### Trainingsmodell, DEEP LEARNING TRAINING '''
-		#?# cnn.modified()
 		### Predict an Images  '''
 		inputLabel, predictionLabel= cnn.predictTestImage(imageIndex)
 		print("--- print in prediction.py -----------------")
@@ -91,12 +86,12 @@ def main():
 		print(" Label des prediction Bild:           : %s" % (predictionLabel,))
 		print("=============================================")
 		# Publish your predicted number
-		pred.publisherPredictionNumber.publish(predictionLabel) ## possible too direct
+		### pred.publisherPredictionNumber.publish(predictionLabel) ## possible too direct
 		
-	    ## zum Test und zur Anschauung
-		pred.saveBild(imageIndex)
+	        ## zum Test und zur Anschauung
+		### pred.saveBild(imageIndex)
 		
-	    ### Andere Variante: hole die Test und die Trainingsdaten
+	        ### Andere Variante: hole die Test und die Trainingsdaten
 		#+# (imagesTrain, labelsTrain), (imagesTest, labelsTest) = cnn.loadData()
 		## # Erkenne ein einzelnes Bild
 		#+# predictionLabel= cnn.predictImage(imagesTest[imageIndex])
