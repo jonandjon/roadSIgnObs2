@@ -1,7 +1,5 @@
 #!/usr/bin/env python
-
 from cv_bridge import CvBridge
-
 import cv2
 import numpy as np
 import rospy
@@ -68,4 +66,4 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+	main()
