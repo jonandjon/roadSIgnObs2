@@ -1,4 +1,35 @@
 
+#Dateien
+
+Dienst.py
+.gitignore*
+.gitignore
+# Dateitypen
+*.dll
+*.so
+*.exe
+*.pyc
+*.png
+*.jpg
+*.swp
+*.json*
+*.h5
+*.ppm
+
+
+# Verzeichnisse
+build/*
+devel/*
+ABLAGE/*
+ABLAGE
+SOLUTION/*
+src/excercise_1/*
+src/test/*
+src/speech/*
+src/camera_pseudo/*
+src/prediction/*
+
+
 # Created by https://www.gitignore.io/api/python
 # Edit at https://www.gitignore.io/?templates=python
 
