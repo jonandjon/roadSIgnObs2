@@ -45,11 +45,11 @@ k.set_image_dim_ordering( 'th' )
 # params for all classes
 batch_size =512  ## 128
 num_classes = 43
-epochs = 10 ## 10 # 12 # 25  ## fuer Test Wert reduziert
+epochs = 2 ## 10 # 12 # 25  ## fuer Test Wert reduziert
 lrate = 0.01
 verbose_train = 1 # 2
 verbose_eval = 0
-img_rows, img_cols = 32, 32# input image dimensions
+img_rows, img_cols = 64, 64 # input image dimensions
 
 
 
@@ -148,8 +148,8 @@ class Gtsrb:
 		X_train= np.array(X_train, dtype='float32')
 		X_test = np.array(X_test, dtype='float32')
 		# reshape to be [samples][channels][width][height]
-		## X_train= X_train.reshape(3,32,32) 
-		## X_test = X_test.reshape(3,32,32) 
+		#? X_train= X_train.reshape(3,img_rows,img_cols) 
+		#? X_test = X_test.reshape(3,img_rows,img_cols) 
 		## X_train=np.array(X_train, np.uint8).reshape(img.size[1], img.size[0], 3)
 		## X_test =np.array(X_test , np.uint8).reshape(img.size[1], img.size[0], 3)
 		#+# X_train=X_train.astype('float32')
@@ -159,12 +159,12 @@ class Gtsrb:
 		X_test  = X_test  / 255.0
 		print("np 0.0 0: \n")
 		print(X_train[6]) ## Testausgabe
-		print("\n   y_train: ", y_train[6]) ##
+		#-# print("\n   y_train: ", y_train[6]) ##
 		print("\n   y_test: ", y_test[6]) ## 		
 		# one hot encode outputs
 		y_train = np_utils.to_categorical(y_train)
 		y_test  = np_utils.to_categorical(y_test)
-		print("  y_train-Matrix: ", y_train[6]) ##   
+		#-# print("  y_train-Matrix: ", y_train[6]) ##   
 		print("  y_test-Matrix: ", y_test[6]) ## 
 		return (X_train, y_train), (X_test, y_test)
 
@@ -230,7 +230,7 @@ class Gtsrb:
 		#-# verbose_eval=0
 		scores = self.model.evaluate(X_test, y_test, verbose=verbose_eval)
 		## Speichert Modell 
-		self.saveModel("cnnGtsrbModel")
+		self.saveModel(fileName="cnnGtsrbModel")
 		## ----------------------------------------
 		print(" Error(class Gtsrb, scnnModel)  : %.2f%%" % (100-scores[1]*100))
 		print(" Test accuracy            : %.2f%%" % (scores[1]*100,))
