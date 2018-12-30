@@ -58,7 +58,7 @@ class Prediction:
 												
 	def callbackCam(self, Cam):
 		#-# if VERBOSE:
-		print 'CALLBECK: received image of type: "%s"' % Cam.format
+		print ('CALLBECK: received image of type: "%s"' % Cam.format)
 		np_arr = np.fromstring(Cam.data, np.uint8)
 		image_np = cv2.imdecode(np_arr, cv2.IMREAD_COLOR ) #cv2.CV_LOAD_IMAGE_COLOR
 		## Bildbewertung
