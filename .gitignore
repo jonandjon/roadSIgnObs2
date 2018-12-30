@@ -4,6 +4,7 @@
 Dienst.py
 .gitignore*
 .gitignore
+.git
 # Dateitypen
 *.dll
 *.so
@@ -15,6 +16,7 @@ Dienst.py
 *.json*
 *.h5
 *.ppm
+
 
 
 # Verzeichnisse
