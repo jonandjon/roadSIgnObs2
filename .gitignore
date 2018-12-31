@@ -13,8 +13,8 @@ Dienst.py
 *.png
 *.jpg
 *.swp
-*.json*
-*.h5
+# *.json*
+# *.h5
 *.ppm
 
 

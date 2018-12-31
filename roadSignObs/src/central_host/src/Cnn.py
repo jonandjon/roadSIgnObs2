@@ -45,7 +45,7 @@ k.set_image_dim_ordering( 'th' )
 # params for all classes
 batch_size =256  ## 128
 num_classes = 43
-epochs = 12 ## 10 # 12 # 25  ## fuer Test Wert reduziert
+epochs = 24 ## 10 # 12 # 25  ## fuer Test Wert reduziert
 lrate = 0.01
 verbose_train = 1 # 2
 verbose_eval = 0
