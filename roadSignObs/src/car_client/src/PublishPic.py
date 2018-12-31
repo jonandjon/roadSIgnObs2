@@ -14,8 +14,8 @@ from std_msgs.msg import Bool, Int32
 from PIL import Image
 import csv ###
 
-pause = 5 # sekunden
-img_rows, img_cols = 64, 64# input image dimensions
+pause = 7 # sekunden
+img_rows, img_cols = 32, 32  # input image dimensions
 
 '''
 Liest Bilder aus dem Testbildverzeichnis und schickt sie zur Bilderkennungssoftware
@@ -75,7 +75,7 @@ def main():
 
 		# start publishing data
 		print("Anzahl der zu bewertenden Bilder: ", len(images))
-		for i in range (0, 22):
+		for i in range (0, 1111):
 			im=random.randint(0, len(images)-1)
 			pict.publishPicture(images[im], verbose)
 			print (i, 'Image: '+format(im, '05d')+'.ppm')
