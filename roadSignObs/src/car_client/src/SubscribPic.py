@@ -1,7 +1,8 @@
 #!/usr/bin/env python
+
 # Software License Agreement (BSD License)
 # Aboniert Bilder der Wabcam
-# Copyright (c) 2018 Jonas Heinke
+# Copyright (c) 2018 Jonas Heinke , 2018-12-30
 # nach Quelle: http://wiki.ros.org/rospy_tutorials/Tutorials/WritingImagePublisherSubscriber
 __author__ =  'Jonas Heinke <heinke.jon@gmail.com>'
 __version__=  '0.1'
@@ -48,16 +49,17 @@ class SubscribPic:
 		print("Subscriber Cam")
   
         # subscribed Topic
-		self. subscribCam = rospy.Subscriber('/camera/output/webcam/compressed_img_msgs',
+		self. subscribCam = rospy.Subscriber('/fullcamera/output/webcam/compressed_img_msgs',
 										 		CompressedImage,
 												self.callbackCam,
-												queue_size = 10)
+												queue_size = 1)
 		
-		print "subscribed from: /camera/output/webcam/compressed_img_msgs"
+		
 
 	def callbackCam(self, Cam):
-		if VERBOSE:
-			print 'CALLBECK: received image of type: "%s"' % Cam.format
+		print "subscribed from: /fullcamera/output/webcam/compressed_img_msgs"
+		#-# if VERBOSE:
+		print 'CALLBECK: received image of type: "%s"' % Cam.format
 		np_arr = np.fromstring(Cam.data, np.uint8)
 		image_np = cv2.imdecode(np_arr, cv2.IMREAD_COLOR ) #cv2.CV_LOAD_IMAGE_COLOR
 		# Zeige Bildfolge -> cv_img

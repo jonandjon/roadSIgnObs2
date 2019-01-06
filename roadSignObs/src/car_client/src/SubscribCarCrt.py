@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-
 # Software License Agreement (BSD License)
 # Copyright (c) 2018, jonas heinke j.h
 # Empfaengt Strassenschild-Images und zugehoerige Labels
@@ -38,8 +37,8 @@ class SubscribCar:
 		self.subcribPredictionNumber=rospy.Subscriber(name='/camera/input/specific/number',
 			data_class=Int32,
 			callback=self.callbackRoadSignNumber,
-			queue_size = 10) ## 
-		
+			queue_size = 1) ## 
+			
 
 	## ----------------------------------------------------------------------------------------------
 	def callbackRoadSignNumber(self, roadSignNumber):
@@ -49,20 +48,20 @@ class SubscribCar:
 			data_class=CompressedImage,
 			callback=self.CallbackRoadSignImage,
 			callback_args=roadSignNumber,
-			queue_size = 10)  
+			queue_size = 1)  
 		
 	def CallbackRoadSignImage(self, roadSignImage, roadSignNumber):
-		#test#  rospy.loginfo(rospy.get_caller_id() + 'SubscribeImages heard %3s. %s ',str(roadSignNumber), roadSignImage.data)
+	        # Hole den Refernz-Text
 		label=self.readReferenz(roadSignNumber)
-		print("Label of the predicted road sign: %2d = %s" % (roadSignNumber.data, label))
-		# print(str(num.data)+". "+picture.data) # zum TEST
 		# Ausgabe als Bild
 		np_arr = np.fromstring(roadSignImage.data, np.uint8)
-		#+# image_np = cv2.imdecode(np_arr,  cv2.COLOR_RGB2HSV ) #cv2.CV_LOAD_IMAGE_COLOR #cv2.IMREAD_COLOR, cv2.COLOR_BGR2HSV, cv2.COLOR_BGR2GRAY
+		# cv2.CV_LOAD_IMAGE_COLOR #cv2.IMREAD_COLOR, cv2.COLOR_BGR2HSV, cv2.COLOR_BGR2GRAY
 		image_np = cv2.imdecode(np_arr,  cv2.COLOR_RGB2HSV ) 
 		cv2.imshow('cv_img', image_np)
+		print("Label of the predicted road sign: %2d = %s" % (roadSignNumber.data, label))
 		cv2.waitKey(1)
 		
+	
 	# liest Bilddateien -----------------------------------
 	def readReferenz(self, roadSignNumber):
 		#label=""
@@ -77,8 +76,6 @@ class SubscribCar:
 		gtFile.close()
 		return label	
 		
-		
-		
 	# -------------------------------------------------------------------------------------------------
 def main():
 	verbose = 0  # use 1 for debug
@@ -91,7 +88,7 @@ def main():
 		rospy.spin()
 
 	except KeyboardInterrupt:
-		print "Shutting down ROS SubsciberCam"
+		print "Shutting down ROS SubsciberCarCrt.py"
 	cv2.destroyAllWindows()
 		
 if __name__ == '__main__':
