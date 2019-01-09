@@ -10,8 +10,8 @@ Dienst.py
 *.so
 *.exe
 *.pyc
-*.png
-*.jpg
+#*.png
+#*.jpg
 *.swp
 # *.json*
 # *.h5
