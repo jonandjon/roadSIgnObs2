@@ -11,12 +11,23 @@ from PIL import Image
 # from threading import Thread
 import threading
 import time
+import sys
+import os
+import Detector
 
 
-PUBLISH_RATE = 5 # hz
-USE_WEBCAM = True
+
 img_rows, img_cols = 32, 32  # input image dimensions
-PAUSE = 5 # sekunden
+PAUSE = 1 # sekunden
+# Detect street sign -->
+object=Detector.Object()
+''' Schnittstelle zwischen WebCam und Detector ist die Datei camFrame.png.
+Dadurch koennen in der Testumgebung wahlweise Bilder oder Cam-Streams zur Analyse genutzt werden '''
+PUBLISH_RATE = 1 # hz
+USE_WEBCAM = False
+# ANALYSEBILD="camFrame.png"  # --> wenn USE_WEBCAM = True
+ANALYSEBILD="mitKreisverkehr.png"
+
 
 class PublishWebCam:
 	def __init__(self):
@@ -39,7 +50,7 @@ class PublishWebCam:
         rospy.loginfo("Publishing data...")
 #--------------------------------------------------------------------------------------
 	''' veroeffentlicht Daten '''
-	def publish_data(self, verbose=0):
+	def cam_data(self, verbose=0):
 		rate = rospy.Rate(PUBLISH_RATE)
 		while not rospy.is_shutdown():
 			# Note:
@@ -47,12 +58,21 @@ class PublishWebCam:
 			# See README.md for further information
 			if USE_WEBCAM:
 				# Methode zum veroeffentlichen des Vollbildes 
-				frame=self.publish_webcam(verbose)
+				camFrame=self.publish_webcam(verbose)
 				rate.sleep()
-				# Methode zum Veroeffentlichen des sklalierten Bildes
-				self.publish_camresize(frame)
+				cv2.imwrite("objDetect/street/camFrame.png", camFrame)  #+++
+				## cv2.imshow('camFrame in PublishCam', camFrame)
+			# Detect sign -> Modul.Klasse()
+			#^# streetImage, objImages=object.detect(analysebild="objDetect/street/camFrame.png")
+			streetImage, objImages=object.detect("objDetect/street/"+ANALYSEBILD)
+			for img in objImages:
+				# if ((int(PUBLISH_RATE*time.time()) % (PAUSE*PUBLISH_RATE)) == 0):
+				cv2.imshow('objImages in PublishCam', img)
+				self.publish_camresize(img)
+				cv2.waitKey(3000)
+			cv2.waitKey(2000)
+			cv2.destroyAllWindows()
 	
-			
 	''' Sendet Vollbilder der Webcam fortlaufend '''
 	def publish_webcam(self, verbose=0):
 		if self.input_stream.isOpened():
@@ -67,29 +87,26 @@ class PublishWebCam:
 	
 	''' Sendet skaliertes Bild der WebCam '''
 	''' Methode alternativ als Thread https://www.python-kurs.eu/threads.php '''	
-	def publish_camresize(self, frame):
-		# print(time.time())
-		# nicht jedes Bild, sondern entsprechend des Pausenzyklus
-		if ((int(PUBLISH_RATE*time.time()) % (PAUSE*PUBLISH_RATE)) == 0):
-			print("frame publish", int(time.time())) # Kontrollausgabe
-			images=array_to_img(frame)		
-			size=[img_rows, img_cols]
-			jpgNormImage=images.resize(size)     # Standardgroesse herstellen
-			npImage=img_to_array(jpgNormImage) ### als Numphy-Array
-			compressed_imgmsg = self.cv_bridge.cv2_to_compressed_imgmsg(npImage)
-			# -> Sendet skaliertes Bild 
-			self.publisher_webcam_comprs.publish(compressed_imgmsg)
-			
-		
+	def publish_camresize(self, img):
+		print("obj publish", int(time.time())) # Kontrollausgabe
+		images=array_to_img(img)		
+		size=[img_rows, img_cols]
+		jpgNormImage=images.resize(size)     # Standardgroesse herstellen
+		npImage=img_to_array(jpgNormImage) ### als Numphy-Array
+		compressed_imgmsg = self.cv_bridge.cv2_to_compressed_imgmsg(npImage)
+		# -> Sendet skaliertes Bild 
+		self.publisher_webcam_comprs.publish(compressed_imgmsg)
 	
+
 def main():
 	verbose = 0  # use 1 for debug
 	# register node
 	rospy.init_node('PublishWebCam', anonymous=False)
 	# Instanz der Klasse (Publisher)
 	cam = PublishWebCam()
+
 	# start publishing data
-	cam.publish_data(verbose)
+	cam.cam_data(verbose)
 
 	try:
 		rospy.spin()
