@@ -26,7 +26,7 @@ Dadurch koennen in der Testumgebung wahlweise Bilder oder Cam-Streams zur Analys
 PUBLISH_RATE = 1 # hz
 USE_WEBCAM = False
 # ANALYSEBILD="camFrame.png"  # --> wenn USE_WEBCAM = True
-ANALYSEBILD="mitKreisverkehr.png"
+ANALYSEBILD="eineAusfahrt.png"  #"mitKreisverkehr.png" #"mitKreuzung.jpg"#"mitEinfahrtVerboten.png"
 
 
 class PublishWebCam:
