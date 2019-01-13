@@ -54,7 +54,7 @@ class Prediction:
 		self. subscribCam = rospy.Subscriber('/camera/output/webcam/compressed_img_msgs',
 												CompressedImage,
 												self.callbackCam,
-												queue_size = 10)
+												queue_size = 1)
 												
 	def callbackCam(self, Cam):
 		#-# if VERBOSE:
@@ -62,7 +62,7 @@ class Prediction:
 		np_arr = np.fromstring(Cam.data, np.uint8)
 		image_np = cv2.imdecode(np_arr, cv2.IMREAD_COLOR ) #cv2.CV_LOAD_IMAGE_COLOR
 		## Bildbewertung
-		npImage=img_to_array(image_np)
+		npImage=img_to_array(image_np, data_format='channels_last')
 		predictionLabel= cnn.predictImage(npImage)
 		# Zeige Bildfolge -> cv_img
 		#++# cv2.imshow('cv_img', image_np)  ## nicht auf Windows --> ubuntu notwendig

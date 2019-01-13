@@ -39,30 +39,30 @@ class SubscribCar:
 			callback=self.callbackRoadSignNumber,
 			queue_size = 1) ## 
 			
-
-	## ----------------------------------------------------------------------------------------------
-	def callbackRoadSignNumber(self, roadSignNumber):
-		#-# subscribPredictionImage(callback_args=roadSignNumber)
-		# Empfang road sign	
 		self.subscribPredictionImage=rospy.Subscriber(name='camera/output/specific/compressed_img_msgs',
 			data_class=CompressedImage,
 			callback=self.CallbackRoadSignImage,
-			callback_args=roadSignNumber,
 			queue_size = 1)  
-		
-	def CallbackRoadSignImage(self, roadSignImage, roadSignNumber):
-	        # Hole den Refernz-Text
+
+			
+
+	## ----------------------------------------------------------------------------------------------
+	def callbackRoadSignNumber(self, roadSignNumber):
+		# Hole den Refernz-Text
 		label=self.readReferenz(roadSignNumber)
-		# Ausgabe als Bild
-		np_arr = np.fromstring(roadSignImage.data, np.uint8)
-		# cv2.CV_LOAD_IMAGE_COLOR #cv2.IMREAD_COLOR, cv2.COLOR_BGR2HSV, cv2.COLOR_BGR2GRAY
-		image_np = cv2.imdecode(np_arr,  cv2.COLOR_RGB2HSV ) 
-		cv2.imshow('cv_img', image_np)
 		print("Label of the predicted road sign: %2d = %s" % (roadSignNumber.data, label))
+
+		
+	def CallbackRoadSignImage(self, roadSignImage):
+	     # Ausgabe als Bild
+		np_array = np.fromstring(roadSignImage.data, np.uint8)
+		# cv2.CV_LOAD_IMAGE_COLOR #cv2.IMREAD_COLOR, cv2.COLOR_BGR2HSV, cv2.COLOR_BGR2GRAY
+		image_np = cv2.imdecode(np_array,  cv2.COLOR_RGB2HSV ) 
+		cv2.imshow('SubsribeCarCrt img', image_np)
 		cv2.waitKey(1)
 		
 	
-	# liest Bilddateien -----------------------------------
+	# liest Kommentar zur erkannten Bildklasse--------------------------------
 	def readReferenz(self, roadSignNumber):
 		#label=""
 		gtFile = open('nummerBezeichnungReferenz.csv', "r" ) # annotations file

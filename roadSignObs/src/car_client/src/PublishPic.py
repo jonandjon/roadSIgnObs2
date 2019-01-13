@@ -13,8 +13,9 @@ from sensor_msgs.msg import CompressedImage
 from std_msgs.msg import Bool, Int32
 from PIL import Image
 import csv ###
+import skimage #?#
 
-pause = 10 # sekunden
+pause = 4 # sekunden
 img_rows, img_cols = 32, 32  # input image dimensions
 
 '''
@@ -40,15 +41,22 @@ class publishpic:
 		gtReader.next() # skip header
 		# loop over all images in current annotations file
 		for row in gtReader:
-			jpgImage=Image.open(prefix + row[0])
-			jpgNormImage=jpgImage.resize(size)  ## Standardgroesse herstellen
-			npImage=img_to_array(jpgNormImage)
+			dateiname=prefix + row[0]
+			ppmImage=Image.open(dateiname)
+			## npNormImg=np.resize(ppmImage,size) geht nicht gut
+			ppmNormImage=ppmImage.resize(size)  ## Standardgroesse herstellen
+			#~# ppmNormImage=skimage.color.rgbcie2rgb(ppmNormImage)
+			#+# nparray = np.array(jpgNormImage)
+			npImage=img_to_array(ppmNormImage, data_format = "channels_last")
+			# https://opencv-python-tutroals.readthedocs.io/en/latest/py_tutorials/py_core/py_basic_ops/py_basic_ops.html
+			b, g, r = cv2.split(npImage)
+			npImage=cv2.merge((r,g,b))
 			npImages.append(npImage)
 		gtFile.close()
-		npImages= np.array(npImages, dtype='float32') ##test
-		# print("Number of Images: %d" %  len(npImages)) 
 		return npImages 
-	
+		
+		
+
 	# liefert zufaeliges Bild aus Bildersammlung	
 	def getRandomImages(self, images):
 		zufallsindex=random.randint(0, len(images)-1)
@@ -59,15 +67,18 @@ class publishpic:
 	
 	## veroeffentlicht Daten
 	def publishPicture(self, image, verbose=0):
-        	#-# image = self.npImages[0]
-        	# convert to images
+        	# convert 
+		# npImage=img_to_array(image, data_format = "channels_last")
+		
         	compressed_imgmsg = self.cv_bridge.cv2_to_compressed_imgmsg(image)
         	# publish data
-        	self.publisherPicture.publish(compressed_imgmsg)
-		#+#self.publisherPicture.publish(compressed_imgmsg.header, compressed_imgmsg.format, compressed_imgmsg.data)
+        	#+# self.publisherPicture.publish(compressed_imgmsg)
+		self.publisherPicture.publish(compressed_imgmsg.header, compressed_imgmsg.format, compressed_imgmsg.data)
+		#?# self.publisherPicture.publish(compressed_imgmsg.format, compressed_imgmsg.data,  compressed_imgmsg.data)
         	if verbose:
-				rospy.loginfo(compressed_imgmsg.header.seq)
-				rospy.loginfo(compressed_imgmsg.format)
+			rospy.loginfo(compressed_imgmsg.header.seq)
+			rospy.loginfo(compressed_imgmsg.format)
+		 			
 				
 def main():
 	verbose = 0  # use 1 for debug
@@ -83,14 +94,12 @@ def main():
 	# Scleife kann mit ^C beendet werden
 	while not rospy.is_shutdown():
 		im=random.randint(0, len(images)-1)
-		pict.publishPicture(images[im], verbose)
+		image=images[im]
+		## image.show()#t
+		time.sleep(pause) 
+		pict.publishPicture(image, verbose)
 		print ( 'Image: '+format(im, '05d')+'.ppm')
 		time.sleep(pause) 
-	'''
-	try:
-		rospy.spin()
-	except KeyboardInterrupt:
-		print "Shutting down "
-		'''
+
 if __name__ == '__main__':
     main()

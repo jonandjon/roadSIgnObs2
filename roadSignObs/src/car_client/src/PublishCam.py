@@ -26,7 +26,7 @@ Dadurch koennen in der Testumgebung wahlweise Bilder oder Cam-Streams zur Analys
 PUBLISH_RATE = 1 # hz
 USE_WEBCAM = False
 # ANALYSEBILD="camFrame.png"  # --> wenn USE_WEBCAM = True
-ANALYSEBILD="eineAusfahrt.png"  #"mitKreisverkehr.png" #"mitKreuzung.jpg"#"mitEinfahrtVerboten.png"
+ANALYSEBILD="mitKreisverkehr.png"  #"mitKreisverkehrDe.png" #"mitKreuzung.jpg"#"mitEinfahrtVerboten.png"#eineAusfahrt
 
 
 class PublishWebCam:
@@ -67,7 +67,7 @@ class PublishWebCam:
 			streetImage, objImages=object.detect("objDetect/street/"+ANALYSEBILD)
 			for img in objImages:
 				# if ((int(PUBLISH_RATE*time.time()) % (PAUSE*PUBLISH_RATE)) == 0):
-				cv2.imshow('objImages in PublishCam', img)
+				# TEST# cv2.imshow('objImages in PublishCam', img)
 				self.publish_camresize(img)
 				cv2.waitKey(3000)
 			cv2.waitKey(2000)
@@ -92,22 +92,20 @@ class PublishWebCam:
 		images=array_to_img(img)		
 		size=[img_rows, img_cols]
 		jpgNormImage=images.resize(size)     # Standardgroesse herstellen
-		npImage=img_to_array(jpgNormImage) ### als Numphy-Array
+		npImage=img_to_array(jpgNormImage, data_format = "channels_last") ### als Numphy-Array
+		#-# cv2.imshow('PublishCam', npImage) ###Kontrolle
 		compressed_imgmsg = self.cv_bridge.cv2_to_compressed_imgmsg(npImage)
 		# -> Sendet skaliertes Bild 
 		self.publisher_webcam_comprs.publish(compressed_imgmsg)
 	
-
 def main():
 	verbose = 0  # use 1 for debug
 	# register node
 	rospy.init_node('PublishWebCam', anonymous=False)
 	# Instanz der Klasse (Publisher)
 	cam = PublishWebCam()
-
 	# start publishing data
 	cam.cam_data(verbose)
-
 	try:
 		rospy.spin()
 	except rospy.ROSInterruptException:

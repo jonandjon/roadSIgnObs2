@@ -29,7 +29,7 @@ class Object:
 		im.save(bild + ".png")
 	''' Detektiert Strassenschilder in eimem Ausgangsbild und gibt diese als Liste (Feld) von Einzelbildern an das aufrufende Programm zurueck.
 	    Zusaetzlich werden die erkannten Objekte im Ausgangsbild umrandet  -- IN WORK haarcascade_sign.xml'''
-	def detect(self, analysebild="objDetect/street/mitKreisverkehr.png", objektbild="objDetect/objekt/kreis.jpg"):
+	def detect(self, analysebild="objDetect/street/mitKreisverkehr.png", objektbild="objDetect/objekt/kreisKlein.jpg"):
 		# load haar cascade and street image # https://github.com/kggreene/sign-detection --> Clonen und anpassen
 		signCascade = cv2.CascadeClassifier("objDetect/"+ CASCADEXML[0]) #CASCADEXML[randint(0, 1)]) 
 		streetImage = cv2.imread(analysebild) # Komplettbild 
@@ -45,22 +45,22 @@ class Object:
 		orb = cv2.ORB()
 		bf = cv2.BFMatcher(cv2.NORM_HAMMING,crossCheck=True)
 		# find the keypoints and descriptors for roadsign image
-		objekt = cv2.imread(objektbild, 0) # Das, was gesucht wird <------------- Detect Objekt
+		objekt = cv2.imread(objektbild) # Das, was gesucht wird <------------- Detect Objekt
 		## cv2.imshow('roadsign', objekt) #j# 
 		## cv2.waitKey(1000)
 		orb = cv2.ORB_create()  #j# Initiate SIFT detector
 		kp_r, des_r = orb.detectAndCompute(objekt,None) 
 		objImages=[] #++
 		# loop through all detected objects
-		
 		for (x,y,w,h) in roundabouts:
 			# obtain object from street image
 			obj = grayStreetImage[y:y+h,x:x+w]
 			ratio = IMAGE_SIZE / obj.shape[1]
 			obj = cv2.resize(obj,(int(IMAGE_SIZE),int(obj.shape[0]*ratio)))
 			# find the keypoints and descriptors for object
-			kp_o, des_o = orb.detectAndCompute(obj,None)
-			if len(kp_o) == 0 or des_o == None:
+			kp_o, des_o = orb.detectAndCompute(obj, None)
+			### if len(kp_o) == 0 or des_o == None:
+			if len(kp_o) == 0: #or des_o == None:
 				continue
 			# match descriptors
 			matches = bf.match(des_r,des_o)

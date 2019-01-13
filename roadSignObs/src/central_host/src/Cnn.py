@@ -44,8 +44,8 @@ k.set_image_dim_ordering( 'th' )
 
 # params for all classes
 batch_size =256  ## 128
-num_classes = 43
-epochs = 24 ## 10 # 12 # 25  ## fuer Test Wert reduziert
+num_classes = 44  # 42
+epochs = 22 ## 10 # 12 # 25  ## fuer Test Wert reduziert
 lrate = 0.01
 verbose_train = 1 # 2
 verbose_eval = 0
@@ -77,7 +77,7 @@ class Gtsrb:
 	# example:	         
 	  trainImages, trainLabels = readTrafficSigns('GTSRB/Training')
 	  print len(trainLabels), len(trainImages)
-	  plt.imshow(trainImages[42])
+	  plt.imshow(trainImages[num_classes])
 	  plt.show()'''
 	''' function for reading the images
 	    Reads train traffic sign data for German Traffic Sign Recognition Benchmark.
@@ -88,7 +88,7 @@ class Gtsrb:
 	def readTrafficSignsImg(self, rootpath="./TrainingImages", subDirNo=num_classes):
 		images = [] # images
 		labels = [] # corresponding labels
-		# loop over all 42 classes
+		# loop over all num_classes classes
 		for c in range(0,subDirNo):
 			prefix = rootpath + '/' + format(c, '05d') + '/' # subdirectory for class
 			gtFile = open(prefix + 'GT-'+ format(c, '05d') + '.csv') # annotations file
@@ -96,7 +96,11 @@ class Gtsrb:
 			gtReader.next() # skip header
 			# loop over all images in current annotations file
 			for row in gtReader:
-				images.append(plt.imread(prefix + row[0])) # the 1th column is the filename
+				#v# images.append(plt.imread(prefix + row[0])) # the 1th column is the filename
+				image=cv2.imread(prefix + row[0])
+				#-# cv2.imshow('in Cnn', image)
+				plt.imshow(image)
+				images.append(image)
 				labels.append(row[7]) # the 8th column is the label
 			gtFile.close()
 		return images, labels
@@ -105,11 +109,11 @@ class Gtsrb:
 	Reads train traffic sign data for German Traffic Sign Recognition Benchmark.
 	Arguments: path to the traffic sign data, for example './GTSRB/Training'
 	Returns:   list of nympy-images, list of corresponding labels'''	
-	def readTrafficSigns(self, rootpath="./TrainingImages", subDirNo=43):
+	def readTrafficSigns(self, rootpath="./TrainingImages", subDirNo=num_classes):
 		npImages = [] # images
 		labels = [] # corresponding labels
 		size=[img_rows,img_cols]
-		# loop over all 42 classes
+		# loop over all num_classes classes
 		for c in range(0,subDirNo,1):
 			prefix = rootpath + '/' + format(c, '05d') + '/' # subdirectory for class
 			gtFile = open(prefix + 'GT-'+ format(c, '05d') + '.csv') # annotations file
@@ -118,9 +122,15 @@ class Gtsrb:
 			#-# print("gtRead: ", gtReader)
 			# loop over all images in current annotations file
 			for row in gtReader:
-				jpgImage=Image.open(prefix + row[0])
-				jpgNormImages=jpgImage.resize(size)
-				npImage=img_to_array(jpgNormImages)
+				ppmImage=Image.open(prefix + row[0])
+				#+# jpgImage = cv2.imread(prefix + row[0], 0)
+				ppmNormImage=ppmImage.resize(size)
+				npImage=img_to_array(ppmNormImage, data_format = "channels_last")
+				# https://opencv-python-tutroals.readthedocs.io/en/latest/py_tutorials/py_core/py_basic_ops/py_basic_ops.html
+				b, g, r = cv2.split(npImage)
+				npImage=cv2.merge((r,g,b))
+				#-# nparray=np.array(jpgNormImages)
+				#?# plt.imshow(jpgImage)
 				npImages.append(npImage)
 				labels.append(row[7]) # the 8th column is the label
 			gtFile.close()
@@ -143,17 +153,11 @@ class Gtsrb:
 		global X_train ##
 		global y_train  ##
         ## Laden der Bilder mit Labels und aufteilen in Trainings- und Testmenge 		
-		(X_train, y_train), (X_test, y_test) = self.readTrafficSigns(rootpath="./TrainingImages", subDirNo=42)
+		(X_train, y_train), (X_test, y_test) = self.readTrafficSigns(rootpath="./TrainingImages", subDirNo=num_classes)
 		## images to numpy-array (ist eigentlich schon)
 		X_train= np.array(X_train, dtype='float32')
 		X_test = np.array(X_test, dtype='float32')
 		# reshape to be [samples][channels][width][height]
-		#? X_train= X_train.reshape(3,img_rows,img_cols) 
-		#? X_test = X_test.reshape(3,img_rows,img_cols) 
-		## X_train=np.array(X_train, np.uint8).reshape(img.size[1], img.size[0], 3)
-		## X_test =np.array(X_test , np.uint8).reshape(img.size[1], img.size[0], 3)
-		#+# X_train=X_train.astype('float32')
-		#+# X_test =X_test.astype('float32')
 		# normalize inputs from 0-255 to 0-1
 		X_train = X_train / 255.0
 		X_test  = X_test  / 255.0
@@ -170,18 +174,14 @@ class Gtsrb:
 
 	''' 2) Define simple cnn Model '''
 	def scnnModel(self, num_classes):
-		#- # model.add(Conv2D(32, (5, 5), input_shape=(1, 28, 28) ))  
-		# input image dimensions
-		#-# img_rows, img_cols = 32, 32
-		#-# batch_size =512
-		self.model.add(Conv2D(32, (3, 3), input_shape=(3, img_rows, img_cols),activation='relu', kernel_constraint=maxnorm(3)))
+		self.model.add(Conv2D((32), (3, 3), input_shape=(img_rows, img_cols,3),activation='relu', kernel_constraint=maxnorm(max_value=3)))
 		self.model.add(Dropout(0.2))
-		self.model.add(Conv2D(32, (3, 3), activation='relu', padding='same', kernel_constraint=maxnorm(3))) ##
-		self.model.add(MaxPooling2D(pool_size=(2, 2)))
+		self.model.add(Conv2D(32, (3, 3), input_shape=(img_rows, img_cols,3), activation='relu', padding='same', kernel_constraint=maxnorm(3))) ##
+		self.model.add(MaxPooling2D(pool_size=(2, 2), data_format='channels_last'))
 		self.model.add(Flatten())
-		self.model.add(Dense(batch_size, activation='relu', kernel_constraint=maxnorm(3)))
+		self.model.add(Dense(units=batch_size, activation='relu', kernel_constraint=maxnorm(3)))
 		self.model.add(Dropout(0.5))
-		self.model.add(Dense(num_classes, activation='softmax'))
+		self.model.add(Dense(units=num_classes, activation='softmax'))
 		return self.model
 	
 	''' Speichert die Modellparameter und das Modell
@@ -215,10 +215,7 @@ class Gtsrb:
 		num_classes = y_test.shape[1]
 		## 2) Define Baseline Model # build the model
 		self.model = self.scnnModel(num_classes)
-		
 		# 3) Compile model
-		#-# lrate = 0.01
-		#-# epochs = 25
 		decay = lrate/epochs
 		sgd = SGD(lr=lrate, momentum=0.9, decay=decay, nesterov=False)
 		self.model.compile(loss='categorical_crossentropy', optimizer=sgd, metrics=['accuracy'])
@@ -229,7 +226,7 @@ class Gtsrb:
 		## 5) Evaluate Modell ##
 		#-# verbose_eval=0
 		scores = self.model.evaluate(X_test, y_test, verbose=verbose_eval)
-		## Speichert Modell 
+		## 6) Speichert Modell 
 		self.saveModel(fileName="cnnGtsrbModel")
 		## ----------------------------------------
 		print(" Error(class Gtsrb, scnnModel)  : %.2f%%" % (100-scores[1]*100))
@@ -259,12 +256,18 @@ class Gtsrb:
 	def predictImage(self, input_data):
 		# nach eindimensional
 		input_data = np.expand_dims(input_data, axis=0)  # tensorflow
-		prediction = self.model.predict(input_data)
+		predictions = self.model.predict(input_data)
 		# revert from one-hot encoding
-		prediction = np.argmax(prediction, axis=None, out=None)
+		prediction = np.argmax(predictions,axis=None, out=None)
+		# Wahrscheinlichkeiten fuer die einzelnen Klassen
+		probabilities=self.model.predict(input_data.reshape(1,img_rows, img_cols,3))
+		#?# probabilities = np.amax(prediction, axis=None, out=None)
+		print ("probabilities of prediction:")
+		print(probabilities)
+		probability=np.amax(probabilities, axis=None, out=None)
 		# output
 		print("--- print in predictionImage() ---")
-		print("prediction label    : %s" % (prediction,))
+		print("prediction label    : %s wit the probability %-30.28f" % (prediction,probability,))
 		return  prediction	
 			
 

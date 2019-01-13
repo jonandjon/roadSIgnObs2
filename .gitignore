@@ -5,6 +5,9 @@ Dienst.py
 .gitignore*
 .gitignore
 .git
+CMakeLists.txt
+
+
 # Dateitypen
 *.dll
 *.so
@@ -32,6 +35,11 @@ src/camera_pseudo/*
 src/prediction/*
 TestImages/*.ppm
 *TestImages/*.ppm
+DocVorlagen/*
+roadSignObs/.catkin_workspace
+devel/
+
+
 
 
 
