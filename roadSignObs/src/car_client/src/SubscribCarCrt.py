@@ -48,9 +48,14 @@ class SubscribCar:
 
 	## ----------------------------------------------------------------------------------------------
 	def callbackRoadSignNumber(self, roadSignNumber):
-		# Hole den Refernz-Text
+		hinweis=''
+		if roadSignNumber.data == -1:
+			hinweis = "OBJEKT NICHT KORREKT ALS VERKEHRSSCHILD ERKANNT"
+		if roadSignNumber.data == -2:
+			hinweis = "OBJEKT NICHT ALS VERKEHRSSCHILD ERKANNT !"	
+		# Hole den Refernz-Text		
 		label=self.readReferenz(roadSignNumber)
-		print("Label of the predicted road sign: %2d = %s" % (roadSignNumber.data, label))
+		print("Label of the predicted road sign: %2d = %s %s" % (roadSignNumber.data, hinweis, label))
 
 		
 	def CallbackRoadSignImage(self, roadSignImage):

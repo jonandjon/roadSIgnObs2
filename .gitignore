@@ -38,6 +38,7 @@ TestImages/*.ppm
 DocVorlagen/*
 roadSignObs/.catkin_workspace
 devel/
+inWork/*
 
 
 

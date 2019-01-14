@@ -45,7 +45,7 @@ k.set_image_dim_ordering( 'th' )
 # params for all classes
 batch_size =256  ## 128
 num_classes = 44  # 42
-epochs = 22 ## 10 # 12 # 25  ## fuer Test Wert reduziert
+epochs = 44 ## 10 # 12 # 25  ## fuer Test Wert reduziert
 lrate = 0.01
 verbose_train = 1 # 2
 verbose_eval = 0
@@ -66,10 +66,7 @@ class Gtsrb:
 		except:
 			print("-> Modelltraining wird durchgefuehrt!")
 			self.modified()
-			
-			
-			
-				
+
 	'''
 	Quelle: http://benchmark.ini.rub.de/index.php?section=gtsrb&subsection=dataset
 			https://matplotlib.org/users/installing.html
@@ -183,6 +180,29 @@ class Gtsrb:
 		self.model.add(Dropout(0.5))
 		self.model.add(Dense(units=num_classes, activation='softmax'))
 		return self.model
+		
+	''' 2to) Define large cnn Model '''
+	def lcnnModel(self, num_classes):
+		self.model.add(Conv2D(32, (3, 3), input_shape=(img_rows, img_cols,3), activation= 'relu' , padding= 'same' ))
+		self.model.add(Dropout(0.2))
+		self.model.add(Conv2D(32, (3, 3), activation= 'relu' , padding= 'same' ))
+		self.model.add(MaxPooling2D(pool_size=(2, 2), data_format='channels_last'))
+		self.model.add(Conv2D(64, (3, 3), activation= 'relu' , padding= 'same' ))
+		self.model.add(Dropout(0.2))
+		self.model.add(Conv2D(64, (3, 3), activation= 'relu' , padding= 'same' ))
+		self.model.add(MaxPooling2D(pool_size=(2, 2)))
+		self.model.add(Conv2D(128, (3, 3), activation= 'relu' , padding= 'same' ))
+		self.model.add(Dropout(0.2))
+		self.model.add(Conv2D(128, (3, 3), activation= 'relu' , padding= 'same' ))
+		self.model.add(MaxPooling2D(pool_size=(2, 2),  padding='same'))
+		self.model.add(Flatten())
+		self.model.add(Dropout(0.2))
+		self.model.add(Dense(1024, activation= 'relu' , kernel_constraint=maxnorm(3)))
+		self.model.add(Dropout(0.2))
+		self.model.add(Dense(512, activation= 'relu' , kernel_constraint=maxnorm(3)))
+		self.model.add(Dropout(0.2))
+		self.model.add(Dense(num_classes, activation= 'softmax' ))
+		return self.model
 	
 	''' Speichert die Modellparameter und das Modell
 	--- https://machinelearningmastery.com/save-load-keras-deep-learning-models/'''
@@ -214,7 +234,8 @@ class Gtsrb:
 		(X_train, y_train), (X_test, y_test)=self.loadData()
 		num_classes = y_test.shape[1]
 		## 2) Define Baseline Model # build the model
-		self.model = self.scnnModel(num_classes)
+		#v# self.model = self.scnnModel(num_classes) # simpel model
+		self.model = self.lcnnModel(num_classes)		# large model
 		# 3) Compile model
 		decay = lrate/epochs
 		sgd = SGD(lr=lrate, momentum=0.9, decay=decay, nesterov=False)
@@ -252,7 +273,7 @@ class Gtsrb:
 		return input_label, prediction
 
 		
-		''' Bewertet ein einzelnes Bild '''
+	''' Bewertet ein einzelnes Bild '''
 	def predictImage(self, input_data):
 		# nach eindimensional
 		input_data = np.expand_dims(input_data, axis=0)  # tensorflow
@@ -265,9 +286,23 @@ class Gtsrb:
 		print ("probabilities of prediction:")
 		print(probabilities)
 		probability=np.amax(probabilities, axis=None, out=None)
+		probabilitySort=np.sort(probabilities, axis=None)
+		print("probabilies Sort: ", probabilitySort)
+		## if not(probability == 1):
+			## prediction = -prediction
 		# output
 		print("--- print in predictionImage() ---")
-		print("prediction label    : %s wit the probability %-30.28f" % (prediction,probability,))
+		print("prediction label    : %s wit the probability %-10.8f" % (prediction, probability,))
+		print("second probability : ", probabilitySort[num_classes-2])
+		print("third probability     : ", probabilitySort[num_classes-3])
+		if probabilitySort[num_classes-2] > 0:
+			prediction=-1
+		if probabilitySort[num_classes-2] > 0:
+			prediction=-2		
 		return  prediction	
+		
+
+	
+		
 			
 

@@ -29,32 +29,32 @@ class Object:
 		im.save(bild + ".png")
 	''' Detektiert Strassenschilder in eimem Ausgangsbild und gibt diese als Liste (Feld) von Einzelbildern an das aufrufende Programm zurueck.
 	    Zusaetzlich werden die erkannten Objekte im Ausgangsbild umrandet  -- IN WORK haarcascade_sign.xml'''
-	def detect(self, analysebild="objDetect/street/mitKreisverkehr.png", objektbild="objDetect/objekt/kreisKlein.jpg"):
+	def detect(self, analysebild="objDetect/street/mitKreisverkehr.png", objektbild="objDetect/objekt/kreisRotBig.jpg"):
 		# load haar cascade and street image # https://github.com/kggreene/sign-detection --> Clonen und anpassen
 		signCascade = cv2.CascadeClassifier("objDetect/"+ CASCADEXML[0]) #CASCADEXML[randint(0, 1)]) 
-		streetImage = cv2.imread(analysebild) # Komplettbild 
+		streetImage = cv2.imread(analysebild)  # Komplettbild
 		streetRecImages=cv2.imread(analysebild) # fuer Ausgabe mit Objectrahmen
-		# do roundabout detection on street image gray
-		grayStreetImage =cv2.cvtColor(streetImage, cv2.COLOR_RGB2GRAY) 
-		#T# cv2.imshow('grayStreetImage ... ', grayStreetImage)
+		# do roundabout detection on street image gray (https://docs.opencv.org/3.1.0/d7/d1b/group__imgproc__misc.html)
+		modStreetImage =streetImage # nicht besser als gray
+		
+		modStreetImage =cv2.cvtColor(streetImage, cv2.COLOR_RGB2GRAY)  #mod = gray
+	
 		## https://docs.opencv.org/3.4/d1/de5/classcv_1_1CascadeClassifier.html
-		#-# roundabouts =cv2.CascadeClassifier.detectMultiScale(grayStreetImage, rejectLevels=5,levelWeights=25, scaleFactor=1.4, minNeighbors=3)
-		roundabouts = signCascade.detectMultiScale(grayStreetImage,  scaleFactor=1.3, minNeighbors=3)
-		#roundabouts = signCascade.detectMultiScale(grayStreetImage, scaleFactor=1.4, minNeighbors=3) #standard
+		#-# roundabouts =cv2.CascadeClassifier.detectMultiScale(modSstreetImage, rejectLevels=5,levelWeights=25, scaleFactor=1.4, minNeighbors=3)
+		roundabouts = signCascade.detectMultiScale(modStreetImage,  scaleFactor=1.3, minNeighbors=3)
+		#roundabouts = signCascade.detectMultiScale(modSstreetImage, scaleFactor=1.4, minNeighbors=3) #standard
 		# initialize ORB and BFMatcher
 		orb = cv2.ORB()
 		bf = cv2.BFMatcher(cv2.NORM_HAMMING,crossCheck=True)
 		# find the keypoints and descriptors for roadsign image
 		objekt = cv2.imread(objektbild) # Das, was gesucht wird <------------- Detect Objekt
-		## cv2.imshow('roadsign', objekt) #j# 
-		## cv2.waitKey(1000)
 		orb = cv2.ORB_create()  #j# Initiate SIFT detector
 		kp_r, des_r = orb.detectAndCompute(objekt,None) 
 		objImages=[] #++
 		# loop through all detected objects
 		for (x,y,w,h) in roundabouts:
 			# obtain object from street image
-			obj = grayStreetImage[y:y+h,x:x+w]
+			obj = modStreetImage[y:y+h,x:x+w]
 			ratio = IMAGE_SIZE / obj.shape[1]
 			obj = cv2.resize(obj,(int(IMAGE_SIZE),int(obj.shape[0]*ratio)))
 			# find the keypoints and descriptors for object
@@ -64,14 +64,10 @@ class Object:
 				continue
 			# match descriptors
 			matches = bf.match(des_r,des_o)
-			# draw object on street image, if threshold met
-			#+# cv2.rectangle(streetImage,(x,y),(x+w,y+h),(255,0,0),1) # alle Objekte
 			if(len(matches) >= MATCH_THRESHOLD):  ## mit Schwellwert und +10 fuer etwas groesseren Rahmen als das Objekt selbst
 				regionImage=streetImage[y:y+h+10,x:x+w+10] # Objekt-Ausschnitt entnehmen
 				objImages.append(regionImage)		# Objekt-Ausschnitt der Liste hinzufuegen
 				cv2.rectangle(streetRecImages,(x,y),(x+w+10,y+h+10),(0,255,0),2) # Makieren im Strassenbild
 		# show objects on street image
 		cv2.imshow('street image in Detector', streetRecImages)
-		## cv2.waitKey(10000)
-		## cv2.destroyAllWindows()
 		return streetImage, objImages

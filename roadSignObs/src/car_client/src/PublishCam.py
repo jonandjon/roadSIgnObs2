@@ -13,21 +13,22 @@ import threading
 import time
 import sys
 import os
+import imageio
 import Detector
-
-
+#T# import subDetect # in WORK
 
 img_rows, img_cols = 32, 32  # input image dimensions
 PAUSE = 1 # sekunden
 # Detect street sign -->
 object=Detector.Object()
+#T# subObj=subDetect.Object() # in Work
 ''' Schnittstelle zwischen WebCam und Detector ist die Datei camFrame.png.
 Dadurch koennen in der Testumgebung wahlweise Bilder oder Cam-Streams zur Analyse genutzt werden '''
 PUBLISH_RATE = 1 # hz
 USE_WEBCAM = False
 # ANALYSEBILD="camFrame.png"  # --> wenn USE_WEBCAM = True
-ANALYSEBILD="mitKreisverkehr.png"  #"mitKreisverkehrDe.png" #"mitKreuzung.jpg"#"mitEinfahrtVerboten.png"#eineAusfahrt
-
+ANALYSEBILD="objDetect/street/mitKreisverkehr.png"  #"eineAusfahrt" #"mitKreuzung.jpg"#"mitEinfahrtVerboten.png"#eineAusfahrt #mitHalteverbot
+OBJEKTBILD="objDetect/objekt/kreisRotBig.jpg"
 
 class PublishWebCam:
 	def __init__(self):
@@ -64,10 +65,10 @@ class PublishWebCam:
 				## cv2.imshow('camFrame in PublishCam', camFrame)
 			# Detect sign -> Modul.Klasse()
 			#^# streetImage, objImages=object.detect(analysebild="objDetect/street/camFrame.png")
-			streetImage, objImages=object.detect("objDetect/street/"+ANALYSEBILD)
+			streetImage, objImages=object.detect(ANALYSEBILD, OBJEKTBILD)
+			#T# subObj.detectOne(ANALYSEBILD, OBJEKTBILD) 
 			for img in objImages:
-				# if ((int(PUBLISH_RATE*time.time()) % (PAUSE*PUBLISH_RATE)) == 0):
-				# TEST# cv2.imshow('objImages in PublishCam', img)
+				self.saveAsPPM(npImage=img, pfad='ABLAGE/')
 				self.publish_camresize(img)
 				cv2.waitKey(3000)
 			cv2.waitKey(2000)
@@ -89,14 +90,24 @@ class PublishWebCam:
 	''' Methode alternativ als Thread https://www.python-kurs.eu/threads.php '''	
 	def publish_camresize(self, img):
 		print("obj publish", int(time.time())) # Kontrollausgabe
-		images=array_to_img(img)		
+		image=array_to_img(img)	
 		size=[img_rows, img_cols]
-		jpgNormImage=images.resize(size)     # Standardgroesse herstellen
+		jpgNormImage=image.resize(size)     # Standardgroesse herstellen
 		npImage=img_to_array(jpgNormImage, data_format = "channels_last") ### als Numphy-Array
 		#-# cv2.imshow('PublishCam', npImage) ###Kontrolle
 		compressed_imgmsg = self.cv_bridge.cv2_to_compressed_imgmsg(npImage)
 		# -> Sendet skaliertes Bild 
 		self.publisher_webcam_comprs.publish(compressed_imgmsg)
+	''' Speichert ein nyph-Array als ppm-Bild'''	
+	def saveAsPPM(self, npImage, pfad='ABLAGE/img.ppm' ):
+		b, g, r = cv2.split(npImage)
+		npImage=cv2.merge((r,g,b))
+		now=str(time.time())
+		datei=pfad + 'img'+now+'.ppm'
+		#t# cv2.imwrite('ABLAGE/img'+ now +'.ppm', img) #CV_IMWRITE_PXM_BINARY
+		# imageio.imwrite(datei, npImage, format='PPM-FI', flags=1) #'PPM-FI' (ascii)
+		imageio.imwrite(datei, npImage, format='PPM') #'PPM-FI' (ascii)
+		
 	
 def main():
 	verbose = 0  # use 1 for debug
