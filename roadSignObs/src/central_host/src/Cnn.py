@@ -39,13 +39,14 @@ from sklearn.model_selection import train_test_split ### $ sudo pip install -U s
 import matplotlib.pyplot as plt ###
 import csv ###
 import glob, os  ## img convert
+
 k.set_image_dim_ordering( 'th' )
 
 
 # params for all classes
 batch_size =256  ## 128
 num_classes = 44  # 42
-epochs = 44 ## 10 # 12 # 25  ## fuer Test Wert reduziert
+epochs = 12 ## 10 # 12 # 25  ## fuer Test Wert reduziert
 lrate = 0.01
 verbose_train = 1 # 2
 verbose_eval = 0
@@ -116,18 +117,14 @@ class Gtsrb:
 			gtFile = open(prefix + 'GT-'+ format(c, '05d') + '.csv') # annotations file
 			gtReader = csv.reader(gtFile, delimiter=';') # csv parser for annotations file
 			gtReader.next() # skip header
-			#-# print("gtRead: ", gtReader)
 			# loop over all images in current annotations file
 			for row in gtReader:
 				ppmImage=Image.open(prefix + row[0])
-				#+# jpgImage = cv2.imread(prefix + row[0], 0)
 				ppmNormImage=ppmImage.resize(size)
 				npImage=img_to_array(ppmNormImage, data_format = "channels_last")
 				# https://opencv-python-tutroals.readthedocs.io/en/latest/py_tutorials/py_core/py_basic_ops/py_basic_ops.html
 				b, g, r = cv2.split(npImage)
 				npImage=cv2.merge((r,g,b))
-				#-# nparray=np.array(jpgNormImages)
-				#?# plt.imshow(jpgImage)
 				npImages.append(npImage)
 				labels.append(row[7]) # the 8th column is the label
 			gtFile.close()
@@ -138,8 +135,6 @@ class Gtsrb:
 		print("Train set size: {0}, Test set size: {1}". format(len(X_train), len(X_test)))
 		return (X_train, y_train), (X_test, y_test)	
 
-	
-
 	'''## Load Data and normalize this   '''	
 	def loadData(self):
 		seed = 7 		# fix random seed for reproducibility
@@ -149,7 +144,7 @@ class Gtsrb:
 		global y_test
 		global X_train ##
 		global y_train  ##
-        ## Laden der Bilder mit Labels und aufteilen in Trainings- und Testmenge 		
+		## Laden der Bilder mit Labels und aufteilen in Trainings- und Testmenge 		
 		(X_train, y_train), (X_test, y_test) = self.readTrafficSigns(rootpath="./TrainingImages", subDirNo=num_classes)
 		## images to numpy-array (ist eigentlich schon)
 		X_train= np.array(X_train, dtype='float32')

@@ -15,20 +15,23 @@ import sys
 import os
 import imageio
 import Detector
-#T# import subDetect # in WORK
+## import subDetect #IN WORK <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
 img_rows, img_cols = 32, 32  # input image dimensions
 PAUSE = 1 # sekunden
-# Detect street sign -->
-object=Detector.Object()
-#T# subObj=subDetect.Object() # in Work
+
+objectSign=Detector.ObjectSign()
+
 ''' Schnittstelle zwischen WebCam und Detector ist die Datei camFrame.png.
 Dadurch koennen in der Testumgebung wahlweise Bilder oder Cam-Streams zur Analyse genutzt werden '''
 PUBLISH_RATE = 1 # hz
-USE_WEBCAM = False
+ANALYSEBILD="objDetect/street/mitEinfahrtVerboten.jpg"  #"eineAusfahrt" #"mitKreuzung.jpg"#"mitEinfahrtVerboten.png"#eineAusfahrt #mitHalteverbot
+OBJEKTBILD="objDetect/objekt/kreisRot2.jpg"
+USE_WEBCAM=False
 # ANALYSEBILD="camFrame.png"  # --> wenn USE_WEBCAM = True
-ANALYSEBILD="objDetect/street/mitKreisverkehr.png"  #"eineAusfahrt" #"mitKreuzung.jpg"#"mitEinfahrtVerboten.png"#eineAusfahrt #mitHalteverbot
-OBJEKTBILD="objDetect/objekt/kreisRotBig.jpg"
+
+if USE_WEBCAM==True:
+	ANALYSEBILD="objDetect/street/camFrame.png"
 
 class PublishWebCam:
 	def __init__(self):
@@ -43,7 +46,7 @@ class PublishWebCam:
                                                        CompressedImage,
                                                        queue_size=1)												
 
-		if USE_WEBCAM:
+		if USE_WEBCAM==True:
 			self.input_stream = cv2.VideoCapture(0)
 			if not self.input_stream.isOpened():
 				raise Exception('Camera stream did not open\n')
@@ -57,18 +60,18 @@ class PublishWebCam:
 			# Note:
 			# reactivate for webcam image. Pay attention to required subscriber buffer size.
 			# See README.md for further information
-			if USE_WEBCAM:
+			if USE_WEBCAM==True:
+				print("WEBCAM is true!")
 				# Methode zum veroeffentlichen des Vollbildes 
 				camFrame=self.publish_webcam(verbose)
 				rate.sleep()
 				cv2.imwrite("objDetect/street/camFrame.png", camFrame)  #+++
 				## cv2.imshow('camFrame in PublishCam', camFrame)
 			# Detect sign -> Modul.Klasse()
-			#^# streetImage, objImages=object.detect(analysebild="objDetect/street/camFrame.png")
-			streetImage, objImages=object.detect(ANALYSEBILD, OBJEKTBILD)
-			#T# subObj.detectOne(ANALYSEBILD, OBJEKTBILD) 
+			#y# streetImage, objImages=object.detect(ANALYSEBILD, OBJEKTBILD) ## ALternative mit
+			streetImage, objImages=objectSign.detectContur(ANALYSEBILD)  # 	
 			for img in objImages:
-				self.saveAsPPM(npImage=img, pfad='ABLAGE/')
+				## self.saveAsPPM(npImage=img, pfad='ABLAGE/')
 				self.publish_camresize(img)
 				cv2.waitKey(3000)
 			cv2.waitKey(2000)
@@ -76,7 +79,7 @@ class PublishWebCam:
 	
 	''' Sendet Vollbilder der Webcam fortlaufend '''
 	def publish_webcam(self, verbose=0):
-		if self.input_stream.isOpened():
+		if self.input_stream.isOpened() and USE_WEBCAM:
 			success, frame = self.input_stream.read()
 			msg_frame = self.cv_bridge.cv2_to_compressed_imgmsg(frame)
 			# -> Uebertragung der vollstaendigen-Camera-Bilder
@@ -98,7 +101,7 @@ class PublishWebCam:
 		compressed_imgmsg = self.cv_bridge.cv2_to_compressed_imgmsg(npImage)
 		# -> Sendet skaliertes Bild 
 		self.publisher_webcam_comprs.publish(compressed_imgmsg)
-	''' Speichert ein nyph-Array als ppm-Bild'''	
+	''' Speichert ein nymphi-array als ppm-Bild'''	
 	def saveAsPPM(self, npImage, pfad='ABLAGE/img.ppm' ):
 		b, g, r = cv2.split(npImage)
 		npImage=cv2.merge((r,g,b))
