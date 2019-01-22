@@ -3,7 +3,7 @@ import sys
 import cv2
 import time
 from random import *
-from PIL import Image
+from PIL import Image, ImageEnhance
 import numpy as np
 import imutils # for contur
 from matplotlib import pyplot as plt 
@@ -27,31 +27,62 @@ Ergebnis/Einschaetzung:
 class ObjectSign:
 	def __init__(self):
 		print ("hier ist der Objekt-Detektor")
+		
+	#Strassenbild wird mehrfach durchlaufen, da Schilder eines Typs auch mehrfach vorkommen koennen
+	def detectAllObj(self, analysebild="objDetect/street/mitKreisverkehr.png"):
+		analysebildpfad="objDetect/street/mitKreisverkehr.png"
+		image=cv2.imread(analysebild, 1)  # im bereinigten Bild wird gesucht und ggf. gefundene Objekte entfernt
+		sizeRoadPicture=(1280,720)
+		image=cv2.resize(image,sizeRoadPicture)  ## Standardgroesse herstellen
+
+		filledObjImage=image.copy()
+		frameObjImage=image.copy()
+		
+		# Suchzyklen fuer mehrere Objekte gleichen Farbtyps
+		allObjImages=[]
+		suchZyklus=0
+		while True:
+			frameObjImage, filledObjImage, objImages=self.detectContur(image,frameObjImage,filledObjImage)
+			print("Such-Zyklus: %d, Einzelbilder: %d, Name: %s" % (suchZyklus, len(objImages), analysebild))
+			# Fuer jeden Suchzyklus Subbilder anhaengen
+			for i in range(0,len(objImages)):
+				allObjImages.append(objImages[i])
+			
+			suchZyklus=suchZyklus + 1
+			if len(objImages)<=0:
+				break
+		
+
+			
+		cv2.imshow("object frame image: "+analysebild, frameObjImage)	
+		# cv2.waitKey(5000)
+		return frameObjImage, allObjImages
+		
+
+	
 	
 	#--- detect Kontur	--------https://www.pyimagesearch.com/2015/06/22/install-opencv-3-0-and-python-2-7-on-ubuntu/---------------------------
-	def detectContur(self, analysebild="objDetect/street/mitKreisverkehr.png"):	
+	def detectContur(self,image, frameObjImage,filledObjImage):	#image
 		# Farbgrenzwerte  b, g, r
-		#      Verbote (rot), Hauptstr. (gelb), Gebote (blau)
-		upLim =[[70, 70, 255], [50, 255, 255], [ 255, 50, 50]]
-		lowLim=[[ 0,  0, 70], [ 0,  70,  70], [  70,  0,  0]]
+		#      Verbote (rot), Hauptstr. (gelb), Gebote (blau)g 
+		upLim =[[50, 50, 255], [50, 255, 255], [ 255, 50, 50]]
+		lowLim=[[ 0,  0,  60], [ 0, 80,   80], [  70,  0,  0]]
 		## Gedanke: Es waere denkbar, die Farbgrenzwerte so zu variieren (Zyklus), dass alle moeglichen Objekte
 		##          erkannt herangezogen werden. Aus diesenr Menge wird dan durch ein weiteres Verfahren (deep learning)
 		##  		eine weitere Eingrenzung vorgenmommen
 		objImages=[] # Liste mit Objekten (Bildausschnitte)
-		x0=[]        # Bereich im Gesamtbild
+		x0=[]
+		y0=[]		# Bereich im Gesamtbild
 		x1=[]
-		y0=[]
 		y1=[]
-		
-		image=cv2.imread(analysebild)  # im bereinigten Bild wird gesucht und ggf. gefundene Objekte entfernt
-		objImage = cv2.imread(analysebild) # Bild mit eingezeichneten Regionen
-		
+	
 		for i in range(0,3): 
 			# find the color sign in the image
+			
 			upper = np.array(upLim[i])  #max(b,g,r) 
 			lower = np.array(lowLim[i])      # min(b,g,r)
 			try:
-				mask = cv2.inRange(image, lower, upper)
+				mask = cv2.inRange(filledObjImage, lower, upper)
 			except:
 				print(" -> Bitte Dateiname und Pfad des Analysebildes pruefen!")
 				sys.exit(0)
@@ -67,9 +98,6 @@ class ObjectSign:
 				# approximate the contour
 				peri = cv2.arcLength(c, True)
 				approx = cv2.approxPolyDP(c, 0.05 * peri, True)
-				# draw a green bounding box surrounding the red game
-				#+# cv2.drawContours(image, [approx], -1, (0, 255, 0), 4)
-				#+# cv2.imshow("detect contur", image)
 				# draw Straight Bounding Rectangle
 				x,y,w,h = cv2.boundingRect(c)
 				xr=int(w*0.1) # Zusaetzlicher Rand 
@@ -78,16 +106,12 @@ class ObjectSign:
 				x1.append(x+w+xr)
 				y0.append(y-yr)
 				y1.append(y+h+yr)
-				cv2.rectangle(image,(0,0),(0,0),(0,255,255),0,0)# Dummy, leider erforderlich
+				##cv2.rectangle(filledObjImage,(0,0),(0,0),(0,255,255),0,0)# Dummy, leider erforderlich
 			except:
-				print("Kein Objekt")
+				# print("Kein Objekt")
 				break
-		
-		
-		if len(x0)<=0:
-			print("Sub-Bilder",len(x0))
-			print("kein Element gefunden")
 
+	
 		# Uebernahme der Bereiche
 		for i in range (0, len(x0)): #len(objImages
 			# kleinste Bereiche werden ausgeschlossen
@@ -97,19 +121,20 @@ class ObjectSign:
 			wh=float(w)/float(h) # schliesst trash aus
 			if (w>24 and h>24 and hw>0.5 and wh>0.5):
 				objImg=image[y0[i]:y1[i],x0[i]:x1[i]] # Objekt-Ausschnitt entnehmen
+				 #t# print("%d,%d,%d, %d"% (y0[i],y1[i],x0[i],x1[i]))
 				objImages.append(objImg)	# Objekt-Ausschnitt der Liste hinzufuegen
-				cv2.rectangle(objImage,(x0[i],y0[i]),(x1[i],y1[i]),(0,255,255),2)
-				#cv2.waitKey(1)				
+				cv2.rectangle(frameObjImage,(x0[i],y0[i]),(x1[i],y1[i]),(upLim[i]),2)
+				cv2.rectangle(frameObjImage,(x0[i]-2,y0[i]-2),(x1[i]+2,y1[i]+2),(lowLim[i]),2)
+				cv2.rectangle(filledObjImage,(x0[i],y0[i]),(x1[i],y1[i]),(255,255,255),cv2.FILLED)
+				#t# cv2.imshow("subimage: "+str(i), objImages[i])
+				
+		return frameObjImage, filledObjImage, objImages
 		
-		'''##Zeigen als Bild [optional zumTesten]
-		for i in range (0, len(objImages)): #len(objImages	
-			cv2.imshow("object images " + str(i), objImages[i])
-			time.sleep(3)
-		'''	
-  		cv2.imshow("object image ", objImage)	
-		cv2.waitKey(3)
-	
-		return objImage, objImages
+		
+
+			
+		
+		
 '''
 Detect with haarcascade
 Sucht geometrische Objekte in einem Bild, zum Beispiel Kreise, Rechtecke oder Dreiecke.

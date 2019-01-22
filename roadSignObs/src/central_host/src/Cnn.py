@@ -1,9 +1,8 @@
 #!/usr/bin/env python
 # The German Traffic Sign Recognition Benchmark
-
+# http://benchmark.ini.rub.de/
 from __future__ import absolute_import #++
 from __future__ import division		#++
-
 from __future__ import print_function
 import cv2
 import rospy
@@ -28,31 +27,24 @@ from keras import optimizers
 from keras.constraints import maxnorm ## extend
 from keras.optimizers import SGD      ## extend
 from keras.preprocessing.image import ImageDataGenerator, array_to_img, img_to_array, load_img # for roadSignObs
-
 from sensor_msgs.msg import CompressedImage
 from std_msgs.msg import Bool, Int32
-
 from PIL import Image  ###
 from scipy import ndimage
 from sklearn.model_selection import train_test_split ### $ sudo pip install -U scikit-learn
-
 import matplotlib.pyplot as plt ###
 import csv ###
 import glob, os  ## img convert
 
 k.set_image_dim_ordering( 'th' )
-
-
 # params for all classes
 batch_size =256  ## 128
 num_classes = 44  # 42
-epochs = 12 ## 10 # 12 # 25  ## fuer Test Wert reduziert
+epochs = 88 ## 10 # 12 # 25  ## fuer Test Wert reduziert
 lrate = 0.01
 verbose_train = 1 # 2
 verbose_eval = 0
 img_rows, img_cols = 32, 32 # input image dimensions
-
-
 
 ''' Simple Convolutional Neural Network cifar10
      Farbbilder mit 32 x 32 pixel'''   		
@@ -70,43 +62,18 @@ class Gtsrb:
 
 	'''
 	Quelle: http://benchmark.ini.rub.de/index.php?section=gtsrb&subsection=dataset
-			https://matplotlib.org/users/installing.html
+		https://matplotlib.org/users/installing.html
 	sample code for reading the traffic sign images and the	corresponding labels
 	# example:	         
-	  trainImages, trainLabels = readTrafficSigns('GTSRB/Training')
-	  print len(trainLabels), len(trainImages)
-	  plt.imshow(trainImages[num_classes])
-	  plt.show()'''
+	trainImages, trainLabels = readTrafficSigns('GTSRB/Training')
+	print len(trainLabels), len(trainImages)
+	plt.imshow(trainImages[num_classes])
+	plt.show()'''
 	''' function for reading the images
-	    Reads train traffic sign data for German Traffic Sign Recognition Benchmark.
-		Arguments: path to the traffic sign data, for example './GTSRB/Training'
-		Returns:   list of images, list of corresponding labels'''
-	# arguments: path to the traffic sign data, for example './GTSRB/Training'
-	# returns: list of images, list of corresponding labels '''
-	def readTrafficSignsImg(self, rootpath="./TrainingImages", subDirNo=num_classes):
-		images = [] # images
-		labels = [] # corresponding labels
-		# loop over all num_classes classes
-		for c in range(0,subDirNo):
-			prefix = rootpath + '/' + format(c, '05d') + '/' # subdirectory for class
-			gtFile = open(prefix + 'GT-'+ format(c, '05d') + '.csv') # annotations file
-			gtReader = csv.reader(gtFile, delimiter=';') # csv parser for annotations file
-			gtReader.next() # skip header
-			# loop over all images in current annotations file
-			for row in gtReader:
-				#v# images.append(plt.imread(prefix + row[0])) # the 1th column is the filename
-				image=cv2.imread(prefix + row[0])
-				#-# cv2.imshow('in Cnn', image)
-				plt.imshow(image)
-				images.append(image)
-				labels.append(row[7]) # the 8th column is the label
-			gtFile.close()
-		return images, labels
-		
-	''' function for reading to JPGs and modify
 	Reads train traffic sign data for German Traffic Sign Recognition Benchmark.
 	Arguments: path to the traffic sign data, for example './GTSRB/Training'
-	Returns:   list of nympy-images, list of corresponding labels'''	
+	Returns:   list of images, list of corresponding labels'''
+	''' Modifiziert: J. H 12.2018'''
 	def readTrafficSigns(self, rootpath="./TrainingImages", subDirNo=num_classes):
 		npImages = [] # images
 		labels = [] # corresponding labels
@@ -135,7 +102,7 @@ class Gtsrb:
 		print("Train set size: {0}, Test set size: {1}". format(len(X_train), len(X_test)))
 		return (X_train, y_train), (X_test, y_test)	
 
-	'''## Load Data and normalize this   '''	
+	'''## Load Data and normalize this  J.Heinke  '''	
 	def loadData(self):
 		seed = 7 		# fix random seed for reproducibility
 		np.random.seed(seed)
@@ -164,7 +131,7 @@ class Gtsrb:
 		print("  y_test-Matrix: ", y_test[6]) ## 
 		return (X_train, y_train), (X_test, y_test)
 
-	''' 2) Define simple cnn Model '''
+	''' 2) Define simple cnn Model Quelle: Develop Deep learning ..., Brownlee'''
 	def scnnModel(self, num_classes):
 		self.model.add(Conv2D((32), (3, 3), input_shape=(img_rows, img_cols,3),activation='relu', kernel_constraint=maxnorm(max_value=3)))
 		self.model.add(Dropout(0.2))
@@ -176,7 +143,7 @@ class Gtsrb:
 		self.model.add(Dense(units=num_classes, activation='softmax'))
 		return self.model
 		
-	''' 2to) Define large cnn Model '''
+	''' 2to) Define large cnn Model, Quelle: Brownlww'''
 	def lcnnModel(self, num_classes):
 		self.model.add(Conv2D(32, (3, 3), input_shape=(img_rows, img_cols,3), activation= 'relu' , padding= 'same' ))
 		self.model.add(Dropout(0.2))
@@ -211,7 +178,8 @@ class Gtsrb:
 		print("Saved model.h5 to disk")
 		print("----------------------")
 		
-	''' Laedt json-Modell '''
+	''' Laedt json-Modell 
+	https://machinelearningmastery.com/save-load-keras-deep-learning-models/'''
 	def loadModel(self, fileName="cnnGtsrbModel"):
 		json_file = open(fileName+'.json', 'r')
 		loaded_model_json = json_file.read()
@@ -221,9 +189,8 @@ class Gtsrb:
 		self.model.load_weights(fileName+".h5")
 		print("Loaded model from disk")
 		return self.model
-		
 	
-	''' Simple Convolutional Neural Network Training '''
+	''' Simple Convolutional Neural Network Training  Modifiziert J.H'''
 	def modified(self): 
 		## 1a) Load Data ##
 		(X_train, y_train), (X_test, y_test)=self.loadData()
@@ -249,7 +216,7 @@ class Gtsrb:
 		print(" Test accuracy            : %.2f%%" % (scores[1]*100,))
 		print()
 		
-	''' Bewertet ein einzelnes Bild aus der Testmenge '''
+	''' Bewertet ein einzelnes Bild aus der Testmenge, Quelle: Vorlesungsskript'''
 	def predictTestImage(self, index=6):
 		## 1a) Load Data, da ggf. noch nicht geladen ##
 		(X_train, y_train), (X_test, y_test)=self.loadData()
@@ -266,9 +233,8 @@ class Gtsrb:
 		print("prediction label    : %s" % (prediction,))
 		print("real label          : %s" % (input_label,))
 		return input_label, prediction
-
 		
-	''' Bewertet ein einzelnes Bild '''
+	''' Bewertet ein einzelnes Bild, Modifiziert J.H '''
 	def predictImage(self, input_data):
 		# nach eindimensional
 		input_data = np.expand_dims(input_data, axis=0)  # tensorflow
@@ -277,24 +243,24 @@ class Gtsrb:
 		prediction = np.argmax(predictions,axis=None, out=None)
 		# Wahrscheinlichkeiten fuer die einzelnen Klassen
 		probabilities=self.model.predict(input_data.reshape(1,img_rows, img_cols,3))
-		#?# probabilities = np.amax(prediction, axis=None, out=None)
 		print ("probabilities of prediction:")
 		print(probabilities)
-		probability=np.amax(probabilities, axis=None, out=None)
-		probabilitySort=np.sort(probabilities, axis=None)
-		print("probabilies Sort: ", probabilitySort)
-		## if not(probability == 1):
-			## prediction = -prediction
+		probability=np.amax(probabilities, axis=None, out=None) # Maximalwert, Axsenunabhaengig
+		probabilitySort=np.sort(probabilities, axis=None)[::-1] # absteigend sortieren
+		predictionComment=''
+		if probabilitySort[1] > 0:
+			predictionComment = "(UNSICHER)"
+		if probabilitySort[2] > 0:
+			predictionComment = "(SEHR UNSICHER)"	
+		print("probabilities Sort: ", probabilitySort)
 		# output
 		print("--- print in predictionImage() ---")
 		print("prediction label    : %s wit the probability %-10.8f" % (prediction, probability,))
-		print("second probability : ", probabilitySort[num_classes-2])
-		print("third probability     : ", probabilitySort[num_classes-3])
-		if probabilitySort[num_classes-2] > 0:
-			prediction=-1
-		if probabilitySort[num_classes-2] > 0:
-			prediction=-2		
-		return  prediction	
+		print("second probability  : ", probabilitySort[1])
+		print("third probability   : ", probabilitySort[2])
+		print("===========================================")
+
+		return  prediction, predictionComment	
 		
 
 	

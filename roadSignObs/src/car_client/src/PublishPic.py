@@ -69,7 +69,6 @@ class publishpic:
 	def publishPicture(self, image, verbose=0):
         	# convert 
 		# npImage=img_to_array(image, data_format = "channels_last")
-		
         	compressed_imgmsg = self.cv_bridge.cv2_to_compressed_imgmsg(image)
         	# publish data
         	#+# self.publisherPicture.publish(compressed_imgmsg)
@@ -78,6 +77,7 @@ class publishpic:
         	if verbose:
 			rospy.loginfo(compressed_imgmsg.header.seq)
 			rospy.loginfo(compressed_imgmsg.format)
+				
 		 			
 				
 def main():

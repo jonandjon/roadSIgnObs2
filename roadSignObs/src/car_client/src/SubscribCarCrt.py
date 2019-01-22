@@ -8,7 +8,7 @@
 import numpy as np
 # rospy for the subscriber
 import rospy
-from std_msgs.msg import String, Bool, Int32
+from std_msgs.msg import String, Bool, Int32, Int16MultiArray
 # ROS Image message
 from sensor_msgs.msg import Image, CompressedImage
 ## Importtyp (j.h)
@@ -33,39 +33,29 @@ class SubscribCar:
 		self.cv_bridge = CvBridge()
 		print("Subscribe image and prediction number (Konstruktor)")
 
-		# Empfang prediction number
-		self.subcribPredictionNumber=rospy.Subscriber(name='/camera/input/specific/number',
-			data_class=Int32,
-			callback=self.callbackRoadSignNumber,
+		self.callbackRoadSignPrediction=rospy.Subscriber(name='/camera/output/specific/prediction',
+			data_class=String,
+			callback=self.callbackRoadSignPrediction,
 			queue_size = 1) ## 
 			
 		self.subscribPredictionImage=rospy.Subscriber(name='camera/output/specific/compressed_img_msgs',
 			data_class=CompressedImage,
-			callback=self.CallbackRoadSignImage,
+			callback=self.callbackRoadSignImage,
 			queue_size = 1)  
 
-			
-
 	## ----------------------------------------------------------------------------------------------
-	def callbackRoadSignNumber(self, roadSignNumber):
-		hinweis=''
-		if roadSignNumber.data == -1:
-			hinweis = "OBJEKT NICHT KORREKT ALS VERKEHRSSCHILD ERKANNT"
-		if roadSignNumber.data == -2:
-			hinweis = "OBJEKT NICHT ALS VERKEHRSSCHILD ERKANNT !"	
-		# Hole den Refernz-Text		
-		label=self.readReferenz(roadSignNumber)
-		print("Label of the predicted road sign: %2d = %s %s" % (roadSignNumber.data, hinweis, label))
+	def callbackRoadSignPrediction(self, roadSignComment):
+		predictionNumber,comment=roadSignComment.data.split("|") # zerlege String
+		label=self.readReferenz(predictionNumber) # hole Beschreibung
+		print("Label of the predicted road sign: %2s : %s %s" % (predictionNumber, comment, label))
 
-		
-	def CallbackRoadSignImage(self, roadSignImage):
+	def callbackRoadSignImage(self, roadSignImage):
 	     # Ausgabe als Bild
 		np_array = np.fromstring(roadSignImage.data, np.uint8)
 		# cv2.CV_LOAD_IMAGE_COLOR #cv2.IMREAD_COLOR, cv2.COLOR_BGR2HSV, cv2.COLOR_BGR2GRAY
 		image_np = cv2.imdecode(np_array,  cv2.COLOR_RGB2HSV ) 
 		cv2.imshow('SubsribeCarCrt img', image_np)
-		cv2.waitKey(1)
-		
+		cv2.waitKey(10) #mindestens eine ms Pause
 	
 	# liest Kommentar zur erkannten Bildklasse--------------------------------
 	def readReferenz(self, roadSignNumber):
@@ -76,11 +66,10 @@ class SubscribCar:
 		#gtReader.next() 
 		label=''
 		for row in gtReader:
-			if roadSignNumber.data == int(row[0]):
+			if roadSignNumber == row[0]:
 				label= row[3]
 		gtFile.close()
 		return label	
-		
 	# -------------------------------------------------------------------------------------------------
 def main():
 	verbose = 0  # use 1 for debug

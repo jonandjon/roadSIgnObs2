@@ -14,6 +14,8 @@ import time
 import sys
 import os
 import imageio
+import csv ###
+import random
 import Detector
 ## import subDetect #IN WORK <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -50,9 +52,23 @@ class PublishWebCam:
 			self.input_stream = cv2.VideoCapture(0)
 			if not self.input_stream.isOpened():
 				raise Exception('Camera stream did not open\n')
-
         rospy.loginfo("Publishing data...")
 #--------------------------------------------------------------------------------------
+	# liest ein zufaellige Strassen-Bilddateien -----------------------------------
+	def readRoadPictures(self, rootpath="./objDetect/street/"):
+		## size=[img_rows,img_cols]
+		## npImages = [] # images
+		namesPictures = [] # images
+		gtFile = open(rootpath + '/roadPictures.csv') # csv-Datei enthaelt Namen der zur Auswahl stehenden Bilddateien
+		gtReader = csv.reader(gtFile, delimiter=';') # csv parser for annotations file
+		gtReader.next() # skip header
+		# loop over all images in current annotations file
+		for row in gtReader:
+			dateiname=rootpath + row[0]
+			namesPictures.append(dateiname)
+		gtFile.close()
+		return namesPictures 
+		
 	''' veroeffentlicht Daten '''
 	def cam_data(self, verbose=0):
 		rate = rospy.Rate(PUBLISH_RATE)
@@ -69,11 +85,14 @@ class PublishWebCam:
 				## cv2.imshow('camFrame in PublishCam', camFrame)
 			# Detect sign -> Modul.Klasse()
 			#y# streetImage, objImages=object.detect(ANALYSEBILD, OBJEKTBILD) ## ALternative mit
-			streetImage, objImages=objectSign.detectContur(ANALYSEBILD)  # 	
-			for img in objImages:
-				## self.saveAsPPM(npImage=img, pfad='ABLAGE/')
+			namesPictures=self.readRoadPictures() #rootpath="./TestImages"
+			zufallsindex=random.randint(0, len(namesPictures)-1) #+++
+			
+			streetImage,allObjImages=objectSign.detectAllObj(namesPictures[zufallsindex])  # 	
+			for img in allObjImages:
+				self.saveAsPPM(npImage=img, pfad='ABLAGE/')
 				self.publish_camresize(img)
-				cv2.waitKey(3000)
+				cv2.waitKey(5000)
 			cv2.waitKey(2000)
 			cv2.destroyAllWindows()
 	

@@ -6,6 +6,8 @@ Dienst.py
 .gitignore
 .git
 CMakeLists.txt
+src/car_client/src/inWORK/subDetect.py
+
 
 
 # Dateitypen
@@ -27,6 +29,8 @@ build/*
 devel/*
 ABLAGE/*
 ABLAGE
+inWORK/*
+inWORK
 SOLUTION/*
 src/excercise_1/*
 src/test/*
