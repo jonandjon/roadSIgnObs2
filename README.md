@@ -2,7 +2,7 @@ HTW Berlin
 Spezielle Anwendungen der Informatik: KI in der Robotik
 ## Projekt: roadSignObs
 ## Straßenschilder erfassen, erkennen und Label zum Car-Controler senden
-Autor: Jonas Heinke
+Autor: Jonas Heinke, 
 Datum: Dezember 2018 - Januar 2019
 
 ## Anforderungen
