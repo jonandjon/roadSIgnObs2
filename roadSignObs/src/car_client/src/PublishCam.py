@@ -21,19 +21,15 @@ import Detector
 
 img_rows, img_cols = 32, 32  # input image dimensions
 PAUSE = 1 # sekunden
-
+PUBLISH_RATE = 3 # fuer WebCam in Hz
+USE_WEBCAM=False # True: WebCam, False: Strassenszenen aus dem Verzeichnis street
+# Instanz der Klasse ...
 objectSign=Detector.ObjectSign()
 
-''' Schnittstelle zwischen WebCam und Detector ist die Datei camFrame.png.
-Dadurch koennen in der Testumgebung wahlweise Bilder oder Cam-Streams zur Analyse genutzt werden '''
-PUBLISH_RATE = 1 # hz
+# nur fuer Testzwecke benoetigt
 ANALYSEBILD="objDetect/street/mitEinfahrtVerboten.jpg"  #"eineAusfahrt" #"mitKreuzung.jpg"#"mitEinfahrtVerboten.png"#eineAusfahrt #mitHalteverbot
 OBJEKTBILD="objDetect/objekt/kreisRot2.jpg"
-USE_WEBCAM=False
-# ANALYSEBILD="camFrame.png"  # --> wenn USE_WEBCAM = True
 
-if USE_WEBCAM==True:
-	ANALYSEBILD="objDetect/street/camFrame.png"
 
 class PublishWebCam:
 	def __init__(self):
@@ -56,8 +52,6 @@ class PublishWebCam:
 #--------------------------------------------------------------------------------------
 	# liest ein zufaellige Strassen-Bilddateien -----------------------------------
 	def readRoadPictures(self, rootpath="./objDetect/street/"):
-		## size=[img_rows,img_cols]
-		## npImages = [] # images
 		namesPictures = [] # images
 		gtFile = open(rootpath + '/roadPictures.csv') # csv-Datei enthaelt Namen der zur Auswahl stehenden Bilddateien
 		gtReader = csv.reader(gtFile, delimiter=';') # csv parser for annotations file
@@ -73,7 +67,6 @@ class PublishWebCam:
 	def cam_data(self, verbose=0):
 		rate = rospy.Rate(PUBLISH_RATE)
 		while not rospy.is_shutdown():
-			# Note:
 			# reactivate for webcam image. Pay attention to required subscriber buffer size.
 			# See README.md for further information
 			if USE_WEBCAM==True:
@@ -81,16 +74,15 @@ class PublishWebCam:
 				# Methode zum veroeffentlichen des Vollbildes 
 				camFrame=self.publish_webcam(verbose)
 				rate.sleep()
-				cv2.imwrite("objDetect/street/camFrame.png", camFrame)  #+++
-				## cv2.imshow('camFrame in PublishCam', camFrame)
-			# Detect sign -> Modul.Klasse()
-			#y# streetImage, objImages=object.detect(ANALYSEBILD, OBJEKTBILD) ## ALternative mit
-			namesPictures=self.readRoadPictures() #rootpath="./TestImages"
-			zufallsindex=random.randint(0, len(namesPictures)-1) #+++
-			
-			streetImage,allObjImages=objectSign.detectAllObj(namesPictures[zufallsindex])  # 	
+				streetImage,allObjImages=objectSign.detectAllObjInFrame(camFrame)
+				#fuer TEST# cv2.imwrite("objDetect/street/camFrame.png", camFrame)  #+++
+				#         # cv2.imshow('camFrame in PublishCam', camFrame)
+			else:  # Strassenszenen aus Verzeichnis objDetect/street
+				namesPictures=self.readRoadPictures() #rootpath="./TestImages"
+				zufallsindex=random.randint(0, len(namesPictures)-1) #+++
+				streetImage,allObjImages=objectSign.detectAllObj(namesPictures[zufallsindex])  #
 			for img in allObjImages:
-				self.saveAsPPM(npImage=img, pfad='ABLAGE/')
+				#+# self.saveAsPPM(npImage=img, pfad='ABLAGE/') # zum Testen
 				self.publish_camresize(img)
 				cv2.waitKey(5000)
 			cv2.waitKey(2000)
@@ -111,24 +103,31 @@ class PublishWebCam:
 	''' Sendet skaliertes Bild der WebCam '''
 	''' Methode alternativ als Thread https://www.python-kurs.eu/threads.php '''	
 	def publish_camresize(self, img):
-		print("obj publish", int(time.time())) # Kontrollausgabe
-		image=array_to_img(img)	
 		size=[img_rows, img_cols]
-		jpgNormImage=image.resize(size)     # Standardgroesse herstellen
-		npImage=img_to_array(jpgNormImage, data_format = "channels_last") ### als Numphy-Array
-		#-# cv2.imshow('PublishCam', npImage) ###Kontrolle
-		compressed_imgmsg = self.cv_bridge.cv2_to_compressed_imgmsg(npImage)
-		# -> Sendet skaliertes Bild 
-		self.publisher_webcam_comprs.publish(compressed_imgmsg)
+		try:
+			print("obj publish", (int(time.time()))) # Kontrollausgabe
+			image=array_to_img(img)
+			jpgNormImage=image.resize(size)     # Standardgroesse herstellen
+			npImage=img_to_array(jpgNormImage, data_format = "channels_last") ### als Numphy-Array
+			#-# cv2.imshow('PublishCam', npImage) ###Kontrolle
+			compressed_imgmsg = self.cv_bridge.cv2_to_compressed_imgmsg(npImage)
+			# -> Sendet skaliertes Bild 
+			self.publisher_webcam_comprs.publish(compressed_imgmsg)
+		except:
+			print("kein gueltiges Objekt") 
+			
 	''' Speichert ein nymphi-array als ppm-Bild'''	
 	def saveAsPPM(self, npImage, pfad='ABLAGE/img.ppm' ):
-		b, g, r = cv2.split(npImage)
-		npImage=cv2.merge((r,g,b))
-		now=str(time.time())
-		datei=pfad + 'img'+now+'.ppm'
-		#t# cv2.imwrite('ABLAGE/img'+ now +'.ppm', img) #CV_IMWRITE_PXM_BINARY
-		# imageio.imwrite(datei, npImage, format='PPM-FI', flags=1) #'PPM-FI' (ascii)
-		imageio.imwrite(datei, npImage, format='PPM') #'PPM-FI' (ascii)
+		try:
+			b, g, r = cv2.split(npImage)
+			npImage=cv2.merge((r,g,b))
+			now=str(time.time())
+			datei=pfad + 'img'+now+'.ppm'
+			#t# cv2.imwrite('ABLAGE/img'+ now +'.ppm', img) #CV_IMWRITE_PXM_BINARY
+			# imageio.imwrite(datei, npImage, format='PPM-FI', flags=1) #'PPM-FI' (ascii)
+			imageio.imwrite(datei, npImage, format='PPM') #'PPM-FI' (ascii)
+		except:
+			print("kein Objektbild") 
 		
 	
 def main():

@@ -39,8 +39,8 @@ import glob, os  ## img convert
 k.set_image_dim_ordering( 'th' )
 # params for all classes
 batch_size =256  ## 128
-num_classes = 44  # 42
-epochs = 88 ## 10 # 12 # 25  ## fuer Test Wert reduziert
+num_classes = 44  # 43 only signs #44 mit trash #49 without signs
+epochs = 44 ## 10 # 12 # 25  ## fuer Test Wert reduziert
 lrate = 0.01
 verbose_train = 1 # 2
 verbose_eval = 0
@@ -78,9 +78,11 @@ class Gtsrb:
 		npImages = [] # images
 		labels = [] # corresponding labels
 		size=[img_rows,img_cols]
+		print("Daten werden geladen")
 		# loop over all num_classes classes
 		for c in range(0,subDirNo,1):
 			prefix = rootpath + '/' + format(c, '05d') + '/' # subdirectory for class
+			print("Verzeichnis: ", prefix)
 			gtFile = open(prefix + 'GT-'+ format(c, '05d') + '.csv') # annotations file
 			gtReader = csv.reader(gtFile, delimiter=';') # csv parser for annotations file
 			gtReader.next() # skip header
@@ -255,7 +257,7 @@ class Gtsrb:
 		print("probabilities Sort: ", probabilitySort)
 		# output
 		print("--- print in predictionImage() ---")
-		print("prediction label    : %s wit the probability %-10.8f" % (prediction, probability,))
+		print("prediction label    : %s with the probability %-10.8f" % (prediction, probability,))
 		print("second probability  : ", probabilitySort[1])
 		print("third probability   : ", probabilitySort[2])
 		print("===========================================")

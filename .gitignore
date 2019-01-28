@@ -21,6 +21,9 @@ src/car_client/src/inWORK/subDetect.py
 # *.json*
 # *.h5
 *.ppm
+roadSignObs/src/car_client/package.xml
+roadSignObs/src/central_host/package.xml
+
 
 
 
@@ -43,6 +46,10 @@ DocVorlagen/*
 roadSignObs/.catkin_workspace
 devel/
 inWork/*
+roadSignObs/install/
+roadSignObs/roadSignObs.launch
+	
+
 
 
 

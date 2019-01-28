@@ -28,10 +28,14 @@ class ObjectSign:
 	def __init__(self):
 		print ("hier ist der Objekt-Detektor")
 		
-	#Strassenbild wird mehrfach durchlaufen, da Schilder eines Typs auch mehrfach vorkommen koennen
-	def detectAllObj(self, analysebild="objDetect/street/mitKreisverkehr.png"):
-		analysebildpfad="objDetect/street/mitKreisverkehr.png"
-		image=cv2.imread(analysebild, 1)  # im bereinigten Bild wird gesucht und ggf. gefundene Objekte entfernt
+	'''Strassenbild wird mehrfach durchlaufen, da Schilder eines Typs auch mehrfach vorkommen koennen.
+	Wenn kein neues Farbobjekt erkannt wird, wird die Methode beendet
+	analysebild - Strassenszene
+	return: frameObjektImage - Strassenszene mit Umrandeten Objekten
+	return: allObjImages     - Liste mit gefundenen Objekten                                 '''
+	def detectAllObj(self, analysebildPfad="objDetect/street/mitKreisverkehr.png"): 
+		#-# analysebildpfad="objDetect/street/mitKreisverkehr.png"
+		image=cv2.imread(analysebildPfad, 1)  # im bereinigten Bild wird gesucht und ggf. gefundene Objekte entfernt
 		sizeRoadPicture=(1280,720)
 		image=cv2.resize(image,sizeRoadPicture)  ## Standardgroesse herstellen
 
@@ -43,7 +47,7 @@ class ObjectSign:
 		suchZyklus=0
 		while True:
 			frameObjImage, filledObjImage, objImages=self.detectContur(image,frameObjImage,filledObjImage)
-			print("Such-Zyklus: %d, Einzelbilder: %d, Name: %s" % (suchZyklus, len(objImages), analysebild))
+			print("Such-Zyklus: %d, Einzelbilder: %d, Name: %s" % (suchZyklus, len(objImages), analysebildPfad))
 			# Fuer jeden Suchzyklus Subbilder anhaengen
 			for i in range(0,len(objImages)):
 				allObjImages.append(objImages[i])
@@ -54,17 +58,46 @@ class ObjectSign:
 		
 
 			
-		cv2.imshow("object frame image: "+analysebild, frameObjImage)	
+		cv2.imshow("object frame image: "+analysebildPfad, frameObjImage)	
 		# cv2.waitKey(5000)
 		return frameObjImage, allObjImages
 		
+	def detectAllObjInFrame(self, image):
+		sizeRoadPicture=(1280,720)
+		image=cv2.resize(image,sizeRoadPicture)  ## Standardgroesse herstellen
 
+		filledObjImage=image.copy()
+		frameObjImage=image.copy()
+		
+		# Suchzyklen fuer mehrere Objekte gleichen Farbtyps
+		allObjImages=[]
+		suchZyklus=0
+		while True:
+			frameObjImage, filledObjImage, objImages=self.detectContur(image,frameObjImage,filledObjImage)
+			print("Such-Zyklus: %d, Einzelbilder: %d, Name: %s" % (suchZyklus, len(objImages), "WebCam"))
+			# Fuer jeden Suchzyklus Subbilder anhaengen
+			for i in range(0,len(objImages)):
+				allObjImages.append(objImages[i])
+			
+			suchZyklus=suchZyklus + 1
+			if len(objImages)<=0:
+				break
+		cv2.imshow("object frame image: "+"WebCam", frameObjImage)	
+		# cv2.waitKey(5000)
+		return frameObjImage, allObjImages
 	
-	
-	#--- detect Kontur	--------https://www.pyimagesearch.com/2015/06/22/install-opencv-3-0-and-python-2-7-on-ubuntu/---------------------------
+	''' Sucht nach Farbobjekten entsprechend der intern gesetzuten Filtern: rot, gelb, blau.
+	Pro Aufruf koennen pro Farbfilter kein oder ein Objekt gefunden werden.
+	#--- detect Kontur--- https://www.pyimagesearch.com/2015/06/22/install-opencv-3-0-and-python-2-7-on-ubuntu/
+	image - Ausgangsbild, das bleibt unveraendert
+	frameObjImage - Bild mit umrandeten Objekten
+	filledObjImage - Bild, in dem die bereits gefundenen Objekte getilgt (geloescht) sind.
+	return: frameObjImage -  Bild mit weiteren umrandeten Objekten
+	return: filledObjImage - Bild, in dem die gefundenen Objekte getilgt sind.
+	return: objImages      - gefundene Objekte waehrend dieses Durchlaufs    	'''
 	def detectContur(self,image, frameObjImage,filledObjImage):	#image
 		# Farbgrenzwerte  b, g, r
-		#      Verbote (rot), Hauptstr. (gelb), Gebote (blau)g 
+		#      Verbote (rot), Hauptstr. (gelb), Gebote (blau) 
 		upLim =[[50, 50, 255], [50, 255, 255], [ 255, 50, 50]]
 		lowLim=[[ 0,  0,  60], [ 0, 80,   80], [  70,  0,  0]]
 		## Gedanke: Es waere denkbar, die Farbgrenzwerte so zu variieren (Zyklus), dass alle moeglichen Objekte
@@ -75,7 +108,6 @@ class ObjectSign:
 		y0=[]		# Bereich im Gesamtbild
 		x1=[]
 		y1=[]
-	
 		for i in range(0,3): 
 			# find the color sign in the image
 			
@@ -100,8 +132,11 @@ class ObjectSign:
 				approx = cv2.approxPolyDP(c, 0.05 * peri, True)
 				# draw Straight Bounding Rectangle
 				x,y,w,h = cv2.boundingRect(c)
-				xr=int(w*0.1) # Zusaetzlicher Rand 
-				yr=int(h*0.1)
+				kRand=0.15
+				if (i==1): kRand=0.5  # gelbes Schild auf weissem Grund -> Rahmen vergroessert
+							 
+				xr=int(w * kRand) # Zusaetzlicher Rand 
+				yr=int(h * kRand)
 				x0.append(x-xr)
 				x1.append(x+w+xr)
 				y0.append(y-yr)
@@ -119,7 +154,7 @@ class ObjectSign:
 			h=y1[i]-y0[i]
 			hw=float(h)/float(w)
 			wh=float(w)/float(h) # schliesst trash aus
-			if (w>24 and h>24 and hw>0.5 and wh>0.5):
+			if (w>31 and h>31 and hw>0.5 and wh>0.5):
 				objImg=image[y0[i]:y1[i],x0[i]:x1[i]] # Objekt-Ausschnitt entnehmen
 				 #t# print("%d,%d,%d, %d"% (y0[i],y1[i],x0[i],x1[i]))
 				objImages.append(objImg)	# Objekt-Ausschnitt der Liste hinzufuegen
