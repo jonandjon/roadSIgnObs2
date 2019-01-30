@@ -44,15 +44,17 @@ epochs = 44 ## 10 # 12 # 25  ## fuer Test Wert reduziert
 lrate = 0.01
 verbose_train = 1 # 2
 verbose_eval = 0
-img_rows, img_cols = 32, 32 # input image dimensions
 
 ''' Simple Convolutional Neural Network cifar10
      Farbbilder mit 32 x 32 pixel'''   		
 class Gtsrb:
 	''' Konstruktor prueft ob Modell bereits treniert '''
-	def __init__(self):
-		print("- EXTEND: ")
+	def __init__(self, OBJ_ROWS, OBJ_COLS):
 		print("class GtsrbCnn")
+		global img_rows
+		img_rows=OBJ_ROWS
+		global img_cols
+		img_cols=OBJ_COLS
 		self.model = Sequential()
 		try:
 			self.loadModel()
@@ -82,7 +84,7 @@ class Gtsrb:
 		# loop over all num_classes classes
 		for c in range(0,subDirNo,1):
 			prefix = rootpath + '/' + format(c, '05d') + '/' # subdirectory for class
-			print("Verzeichnis: ", prefix)
+			#t# print("Verzeichnis: ", prefix)
 			gtFile = open(prefix + 'GT-'+ format(c, '05d') + '.csv') # annotations file
 			gtReader = csv.reader(gtFile, delimiter=';') # csv parser for annotations file
 			gtReader.next() # skip header
@@ -108,7 +110,6 @@ class Gtsrb:
 	def loadData(self):
 		seed = 7 		# fix random seed for reproducibility
 		np.random.seed(seed)
-
 		global X_test
 		global y_test
 		global X_train ##
@@ -118,19 +119,17 @@ class Gtsrb:
 		## images to numpy-array (ist eigentlich schon)
 		X_train= np.array(X_train, dtype='float32')
 		X_test = np.array(X_test, dtype='float32')
-		# reshape to be [samples][channels][width][height]
+		# reshape to be [samples][width][height][channels]
 		# normalize inputs from 0-255 to 0-1
 		X_train = X_train / 255.0
 		X_test  = X_test  / 255.0
-		print("np 0.0 0: \n")
-		print(X_train[6]) ## Testausgabe
-		#-# print("\n   y_train: ", y_train[6]) ##
-		print("\n   y_test: ", y_test[6]) ## 		
+		#t# print(X_train[7]) ## Testausgabe
+		#t# print("\n   y_test: ", y_test[7]) ## 		
 		# one hot encode outputs
 		y_train = np_utils.to_categorical(y_train)
 		y_test  = np_utils.to_categorical(y_test)
 		#-# print("  y_train-Matrix: ", y_train[6]) ##   
-		print("  y_test-Matrix: ", y_test[6]) ## 
+		#-# print("  y_test-Matrix: ", y_test[6]) ## 
 		return (X_train, y_train), (X_test, y_test)
 
 	''' 2) Define simple cnn Model Quelle: Develop Deep learning ..., Brownlee'''
@@ -171,25 +170,25 @@ class Gtsrb:
 	''' Speichert die Modellparameter und das Modell
 	--- https://machinelearningmastery.com/save-load-keras-deep-learning-models/'''
 	def saveModel(self, fileName="cnnGtsrbModel"):
+		print("Saved model.h5 to disk")
 		### serialize model to JSON
 		model_json = self.model.to_json()
 		with open(fileName+".json", "w") as json_file:
 			json_file.write(model_json)
 		# serialize weights to HDF5
 		self.model.save_weights(fileName+".h5")
-		print("Saved model.h5 to disk")
 		print("----------------------")
 		
 	''' Laedt json-Modell 
 	https://machinelearningmastery.com/save-load-keras-deep-learning-models/'''
 	def loadModel(self, fileName="cnnGtsrbModel"):
+		print("Loaded model from disk")
 		json_file = open(fileName+'.json', 'r')
 		loaded_model_json = json_file.read()
 		json_file.close()
 		self.model = model_from_json(loaded_model_json)
 		# load weights into new model
 		self.model.load_weights(fileName+".h5")
-		print("Loaded model from disk")
 		return self.model
 	
 	''' Simple Convolutional Neural Network Training  Modifiziert J.H'''
@@ -219,50 +218,53 @@ class Gtsrb:
 		print()
 		
 	''' Bewertet ein einzelnes Bild aus der Testmenge, Quelle: Vorlesungsskript'''
-	def predictTestImage(self, index=6):
+	def predictTestImage(self, index=7):
+		#t# print("--- print in predictionTestImage() ---")
 		## 1a) Load Data, da ggf. noch nicht geladen ##
-		(X_train, y_train), (X_test, y_test)=self.loadData()
+		## (X_train, y_train), (X_test, y_test)=self.loadData()
+		(_, _), (X_test, y_test)=self.loadData()
 		# expand dimension for batch
 		input_data = np.expand_dims(X_test[index], axis=0)  # tensorflow
+		input_data = np.asarray(input_data).astype(np.float32) / 255.0 # j.j
 		input_label = y_test[index]
 		prediction = self.model.predict(input_data)
 		# revert from one-hot encoding
 		prediction = np.argmax(prediction, axis=None, out=None)
 		input_label = np.argmax(input_label, axis=None, out=None)
 		# output
-		print("--- print in predictionTestImage() ---")
-		print("index of the picture: %s" % (index,))
-		print("prediction label    : %s" % (prediction,))
-		print("real label          : %s" % (input_label,))
+		#print("index of the picture: %s" % (index,))
+		#print("prediction label    : %s" % (prediction,))
+		#print("real label          : %s" % (input_label,))
 		return input_label, prediction
 		
 	''' Bewertet ein einzelnes Bild, Modifiziert J.H '''
 	def predictImage(self, input_data):
-		# nach eindimensional
-		input_data = np.expand_dims(input_data, axis=0)  # tensorflow
+		input_data = np.expand_dims(input_data, axis=0)  # tensorflow + 1 dimension
+		input_data = np.asarray(input_data).astype(np.float32) / 255.0 # j.j
 		predictions = self.model.predict(input_data)
 		# revert from one-hot encoding
 		prediction = np.argmax(predictions,axis=None, out=None)
 		# Wahrscheinlichkeiten fuer die einzelnen Klassen
 		probabilities=self.model.predict(input_data.reshape(1,img_rows, img_cols,3))
-		print ("probabilities of prediction:")
-		print(probabilities)
+		#t# print ("probabilities of prediction:")
+		#t# print(probabilities)
 		probability=np.amax(probabilities, axis=None, out=None) # Maximalwert, Axsenunabhaengig
 		probabilitySort=np.sort(probabilities, axis=None)[::-1] # absteigend sortieren
-		predictionComment=''
-		if probabilitySort[1] > 0:
-			predictionComment = "(UNSICHER)"
-		if probabilitySort[2] > 0:
-			predictionComment = "(SEHR UNSICHER)"	
-		print("probabilities Sort: ", probabilitySort)
+		predictionComment='SICHER' ## Wertung		
+		if probability <0.97: predictionComment = "UNSICHER"
+		if probability <0.90: predictionComment = "SEHR UNSICHER"
+		if probability <0.85: predictionComment = "TRASH"
+		predictionComment="%13s (p: %-5.3f):" % (predictionComment, probability,)
+		#t# print("probabilities Sort: ")
+		#t# print(probabilitySort)
 		# output
-		print("--- print in predictionImage() ---")
+		#+# print("--- print in predictionImage() ---")
 		print("prediction label    : %s with the probability %-10.8f" % (prediction, probability,))
 		print("second probability  : ", probabilitySort[1])
 		print("third probability   : ", probabilitySort[2])
 		print("===========================================")
 
-		return  prediction, predictionComment	
+		return  prediction, probability, predictionComment	
 		
 
 	

@@ -8,7 +8,12 @@ import numpy as np
 import imutils # for contur
 from matplotlib import pyplot as plt 
 from keras.preprocessing.image import ImageDataGenerator, array_to_img, img_to_array, load_img # for roadSignObs
- 
+import imutils # image pyramid
+## from pyimagesearch.helpers import pyramid
+from skimage.transform import pyramid_gaussian
+import argparse
+
+
 # constants for class Object
 IMAGE_SIZE = 200.0
 MATCH_THRESHOLD = 3
@@ -16,6 +21,28 @@ CASCADEXML=[] # "haarcascade_obj.xml"  # lbpCascade.xml # haarcascade.xml (NOT W
 CASCADEXML.append("haarcascade_obj.xml") 	# <- TO WORK 0
 CASCADEXML.append("lbpCascade.xml")		# <- TO WORK 1
 
+
+class NormImages:
+	def __init__(self):
+		print ("NormImages only")
+		
+	def inImages(self, analysebildPfad="objDetect/street/mitKreisverkehr.png"): 
+		image=cv2.imread(analysebildPfad, 1)  # im bereinigten Bild wird gesucht und ggf. gefundene Objekte entfernt
+		sizeRoadPicture=(1280,720)
+		image=cv2.resize(image,sizeRoadPicture)  ## Standardgroesse herstellen
+		images=[]
+		images.append(image) #moeglicherweise kommt noch etwas dazu
+		#t# cv2.imshow("only image: "+analysebildPfad, image)
+		return images
+		
+		
+	def inFrame(self, image): 
+		sizeRoadPicture=(1280,720)
+		image=cv2.resize(image,sizeRoadPicture)  ## Standardgroesse herstellen
+		images=[]
+		images.append(image) #moeglicherweise kommt noch etwas dazu
+		#t# cv2.imshow("only image from WebCam: ", image)
+		return images		
 '''
 Detect with color
 Grundlage: https://www.pyimagesearch.com/2015/06/22/install-opencv-3-0-and-python-2-7-on-ubuntu/
@@ -24,24 +51,22 @@ Ergebnis/Einschaetzung:
 - Vorhandenes Bildmaterial (jpg-Dateien) liefert gute Ergebnisse
 - Bei Einsatz in der natuerlichen Umgebung ist eine Bildvorverarbeitung vorzusehen
 '''
-class ObjectSign:
+#class ObjectSign:
+class ColorFilter:	
 	def __init__(self):
-		print ("hier ist der Objekt-Detektor")
+		print ("hier ist der Farb-Objekt-Detektor ")
 		
 	'''Strassenbild wird mehrfach durchlaufen, da Schilder eines Typs auch mehrfach vorkommen koennen.
 	Wenn kein neues Farbobjekt erkannt wird, wird die Methode beendet
 	analysebild - Strassenszene
 	return: frameObjektImage - Strassenszene mit Umrandeten Objekten
 	return: allObjImages     - Liste mit gefundenen Objekten                                 '''
-	def detectAllObj(self, analysebildPfad="objDetect/street/mitKreisverkehr.png"): 
-		#-# analysebildpfad="objDetect/street/mitKreisverkehr.png"
+	def inImages(self, analysebildPfad="objDetect/street/mitKreisverkehr.png"): 
 		image=cv2.imread(analysebildPfad, 1)  # im bereinigten Bild wird gesucht und ggf. gefundene Objekte entfernt
 		sizeRoadPicture=(1280,720)
 		image=cv2.resize(image,sizeRoadPicture)  ## Standardgroesse herstellen
-
 		filledObjImage=image.copy()
 		frameObjImage=image.copy()
-		
 		# Suchzyklen fuer mehrere Objekte gleichen Farbtyps
 		allObjImages=[]
 		suchZyklus=0
@@ -51,18 +76,14 @@ class ObjectSign:
 			# Fuer jeden Suchzyklus Subbilder anhaengen
 			for i in range(0,len(objImages)):
 				allObjImages.append(objImages[i])
-			
 			suchZyklus=suchZyklus + 1
 			if len(objImages)<=0:
 				break
-		
-
-			
 		cv2.imshow("object frame image: "+analysebildPfad, frameObjImage)	
-		# cv2.waitKey(5000)
-		return frameObjImage, allObjImages
+		cv2.waitKey(10)
+		return allObjImages
 		
-	def detectAllObjInFrame(self, image):
+	def inFrame(self, image):
 		sizeRoadPicture=(1280,720)
 		image=cv2.resize(image,sizeRoadPicture)  ## Standardgroesse herstellen
 
@@ -83,8 +104,8 @@ class ObjectSign:
 			if len(objImages)<=0:
 				break
 		cv2.imshow("object frame image: "+"WebCam", frameObjImage)	
-		# cv2.waitKey(5000)
-		return frameObjImage, allObjImages
+		cv2.waitKey(10)
+		return  allObjImages
 	
 	''' Sucht nach Farbobjekten entsprechend der intern gesetzuten Filtern: rot, gelb, blau.
 	Pro Aufruf koennen pro Farbfilter kein oder ein Objekt gefunden werden.
@@ -169,7 +190,7 @@ class ObjectSign:
 
 			
 		
-		
+############### wird nicht mehr genutzt #############################################################		
 '''
 Detect with haarcascade
 Sucht geometrische Objekte in einem Bild, zum Beispiel Kreise, Rechtecke oder Dreiecke.

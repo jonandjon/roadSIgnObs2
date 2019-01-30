@@ -29,8 +29,6 @@ class publishpic:
 										CompressedImage,queue_size=1)
 		 
 	
-		 #--------------------------------------------------------------------------------------
-	
 	# liest Bilddateien -----------------------------------
 	def readSigns(self, rootpath="./TestImages"):
 		size=[img_rows,img_cols]
@@ -43,10 +41,7 @@ class publishpic:
 		for row in gtReader:
 			dateiname=prefix + row[0]
 			ppmImage=Image.open(dateiname)
-			## npNormImg=np.resize(ppmImage,size) geht nicht gut
 			ppmNormImage=ppmImage.resize(size)  ## Standardgroesse herstellen
-			#~# ppmNormImage=skimage.color.rgbcie2rgb(ppmNormImage)
-			#+# nparray = np.array(jpgNormImage)
 			npImage=img_to_array(ppmNormImage, data_format = "channels_last")
 			# https://opencv-python-tutroals.readthedocs.io/en/latest/py_tutorials/py_core/py_basic_ops/py_basic_ops.html
 			b, g, r = cv2.split(npImage)
@@ -55,8 +50,6 @@ class publishpic:
 		gtFile.close()
 		return npImages 
 		
-		
-
 	# liefert zufaeliges Bild aus Bildersammlung	
 	def getRandomImages(self, images):
 		zufallsindex=random.randint(0, len(images)-1)
@@ -68,18 +61,15 @@ class publishpic:
 	## veroeffentlicht Daten
 	def publishPicture(self, image, verbose=0):
         	# convert 
-		# npImage=img_to_array(image, data_format = "channels_last")
         	compressed_imgmsg = self.cv_bridge.cv2_to_compressed_imgmsg(image)
         	# publish data
         	#+# self.publisherPicture.publish(compressed_imgmsg)
 		self.publisherPicture.publish(compressed_imgmsg.header, compressed_imgmsg.format, compressed_imgmsg.data)
-		#?# self.publisherPicture.publish(compressed_imgmsg.format, compressed_imgmsg.data,  compressed_imgmsg.data)
         	if verbose:
 			rospy.loginfo(compressed_imgmsg.header.seq)
 			rospy.loginfo(compressed_imgmsg.format)
 				
-		 			
-				
+	
 def main():
 	verbose = 0  # use 1 for debug
 	# register node
