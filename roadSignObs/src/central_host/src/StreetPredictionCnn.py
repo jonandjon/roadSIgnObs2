@@ -95,11 +95,11 @@ class Prediction:
 					img=array_to_img(objNp, data_format = "channels_last")
 					normImg=img.resize(objSize)     # Standardgroesse herstellen
 					objImg=img_to_array(normImg, data_format = "channels_last") ### als Numphy-Array
-					prediction, probability, predictionComment= cnn.predictImage(objImg)
-					#t# self.saveNpAsPPM(objNp, "x_objImg"+str(k)+str(x)+str(y)+"p"+str(probability))
-					if probability > 0.99 and prediction<43: # ab 43 ist trash
+					prediction, probability = cnn.predictImage(objImg)
+					#self.saveNpAsPPM(objNp, "x_objImg"+str(k)+str(x)+str(y)+"p"+str(probability)) #t Falls alle Bilder gewuenscht# 
+					if probability > 0.990 and prediction<43: # ab 43 ist trash
 						cv2.rectangle(frameObjImage,(x,y),(x1,y1),(0,0,255),1)
-						self.saveNpAsPPM(objNp, "y_img"+str(k)+"pd"+str(prediction)+"p"+str(probability))
+						self.saveNpAsPPM(objNp, "y_img"+str(k)+"pd"+str(prediction)+"p"+str(probability)) #Speichert den aktuellen Suchbereich ab als ppm
 						#t#time.sleep(30)
 						
 					if probability > 0.999 and prediction<43:

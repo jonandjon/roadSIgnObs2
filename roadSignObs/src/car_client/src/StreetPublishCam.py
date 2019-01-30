@@ -23,11 +23,11 @@ PAUSE = 5000 # Millisekunden
 PUBLISH_RATE = 3 # fuer WebCam in Hz
 USE_WEBCAM=False # True: WebCam, False: Strassenszenen aus dem Verzeichnis street
 
-
+#Klasse zum Normen der hineingefuegten Bilder in dem Street -Ordner
 class NormImages:
 	def __init__(self):
 		print ("NormImages only")
-		
+	'''fuer Strassenbilder'''
 	def inImages(self, analysebildPfad="objDetect/street/mitKreisverkehr.png"): 
 		image=cv2.imread(analysebildPfad, 1)  # im bereinigten Bild wird gesucht und ggf. gefundene Objekte entfernt
 		sizeRoadPicture=(1280,720)
@@ -37,7 +37,7 @@ class NormImages:
 		#t# cv2.imshow("only image: "+analysebildPfad, image)
 		return images
 		
-		
+	'''In einer Webcam/Video'''
 	def inFrame(self, image): 
 		sizeRoadPicture=(1280,720)
 		image=cv2.resize(image,sizeRoadPicture)  ## Standardgroesse herstellen
@@ -50,6 +50,7 @@ class NormImages:
 objectSign=NormImages()
 
 class PublishWebCam:
+	#Konstruktor 
 	def __init__(self):
 		self.cv_bridge = CvBridge()
 		# publish webcam
@@ -57,7 +58,7 @@ class PublishWebCam:
                                                        CompressedImage,
                                                        queue_size=1)
 													   
-		# publish Frame
+		# publish Frame nur eine publisher von noetig 
 		self.publisher_fullcam_comprs = rospy.Publisher("/fullcamera/output/webcam/compressed_img_msgs",
                                                        CompressedImage,
                                                        queue_size=1)												
@@ -68,7 +69,7 @@ class PublishWebCam:
 				raise Exception('Camera stream did not open\n')
         rospy.loginfo("Publishing data...")
 #--------------------------------------------------------------------------------------
-	# liest ein zufaellige Strassen-Bilddateien -----------------------------------
+	''' liest ein zufaellige Strassen-Bilddateien '''
 	def readRoadPictures(self, rootpath="./objDetect/street/"):
 		namesPictures = [] # images
 		gtFile = open(rootpath + '/roadPictures.csv') # csv-Datei enthaelt Namen der zur Auswahl stehenden Bilddateien
@@ -83,7 +84,7 @@ class PublishWebCam:
 		
 	''' veroeffentlicht Daten '''
 	def cam_data(self, verbose=0):
-		rate = rospy.Rate(PUBLISH_RATE)
+		rate = rospy.Rate(PUBLISH_RATE)  #Takrate wie oft ausgefuehrt wird?
 		while not rospy.is_shutdown():
 			# reactivate for webcam image. Pay attention to required subscriber buffer size.
 			# See README.md for further information
@@ -98,6 +99,7 @@ class PublishWebCam:
 			else:  	# Strassenszenen aus Verzeichnis objDetect/street
 				namesPictures=self.readRoadPictures() #rootpath="./TestImages"
 				zufallsindex=random.randint(0, len(namesPictures)-1) #+++
+				# zufallsindex=3 # immer das selbe Bild
 				Images=objectSign.inImages(namesPictures[zufallsindex])  #
 			for img in Images: ## koennten auch mehrere Bilder in einer Liste sein ###
 				#+# self.saveAsPPM(npImage=img, pfad='ABLAGE/') # zum Testen
@@ -125,7 +127,7 @@ class PublishWebCam:
 				rospy.loginfo(msg_frame.format)
 		return frame
 	
-	''' Speichert ein nymphi-array als ppm-Bild'''	
+	'''Debugmethode Speichert ein nymphi-array als ppm-Bild '''	
 	def saveAsPPM(self, npImage, pfad='ABLAGE/img.ppm' ):
 		try:
 			b, g, r = cv2.split(npImage)
@@ -146,7 +148,7 @@ def main():
 	# Instanz der Klasse (Publisher)
 	cam = PublishWebCam()
 	# start publishing data
-	cam.cam_data(verbose)
+	cam.cam_data(verbose)  #Veroeffentlich Daten an ein Topic
 	try:
 		rospy.spin()
 	except rospy.ROSInterruptException:

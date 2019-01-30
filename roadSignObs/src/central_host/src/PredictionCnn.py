@@ -52,12 +52,8 @@ class Prediction:
 							CompressedImage,
 							self.callbackObjImage,
 							queue_size = 1)
+		
 							
-                # Subscriber deeines Stassenbildes, Objekte noch nicht detektiert --------
-		self. subscribCam = rospy.Subscriber('/camera/output/webcam/compressed_img_msgs',
-							CompressedImage,
-							self.callbackStreetImage,
-							queue_size = 1)								
 	''' Verarbeitet ein Objektbild 32x32 Pixel '''											
 	def callbackObjImage(self, Cam):
 		# print ('CALLBECK: object images of type: "%s"' % Cam.format)
@@ -69,7 +65,14 @@ class Prediction:
 		
 		print("Objektbild im Format (shape): ", h, w, c)
 		## Bildbewertung
-		prediction, probability, predictionComment= cnn.predictImage(np_image)
+		prediction, probability = cnn.predictImage(np_image)
+		
+		predictionComment='SICHER' ## Wertung		
+		if probability <0.97: predictionComment = "UNSICHER"
+		if probability <0.90: predictionComment = "SEHR UNSICHER"
+		if probability <0.85: predictionComment = "TRASH"
+		predictionComment="%13s (p: %-5.3f):" % (predictionComment, probability,)
+		#+
 		prediction= str(prediction) + "|"+ predictionComment # Eine Uebertragung -> SYNCHRON
 		# Sende Prediction-Label und das dazugehoerige Bild zurueck #
 		self.publisherPrediction.publish(prediction)
@@ -77,71 +80,10 @@ class Prediction:
 		self.publisherPredictionImage.publish(Cam) # wird nur weitergereicht
 		cv2.waitKey(10)
 	
-	''' Verarbeitet das Strassenbild 1280x720 Pixel'''	
-	def callbackStreetImage(self, Cam):
-		np_arr = np.fromstring(Cam.data, np.uint8)
-		image_np = cv2.imdecode(np_arr, cv2.IMREAD_COLOR ) #cv2.CV_LOAD_IMAGE_COLOR
-		npImage=img_to_array(image_np, data_format = "channels_last")
-		b, g, r = cv2.split(npImage)
-		npImage=cv2.merge((r,g,b))
-
-		(h,w,c) = npImage.shape
-		if h<=OBJ_ROWS: return
-		
-		print("Strassenbild im Format (shape): ", h, w, c)
-		frameObjImage=npImage.copy()
-		frameObjImage=self.findObjects(npImage, frameObjImage)
-		# zur Kontrolle ##
-		#cv2.imshow("frame image from find objects ", frameObjImage)
-		
-		#bild=Image.fromarray(frameObjImage)
-		self.saveArry(frameObjImage,name="v_frameObjImag")
-		print("callbackStreetImage - END")	
-		self.publisherPredictionImage.publish(Cam) 
-
-		
-		
-	''' Vollstaendiges Durchsuchen eines Strassenbildes mit variablen Rahmen (kernels)'''	
-	def findObjects(self, image, frameObjImage):
-		### IN WORK ###
-		
-		(hmax,wmax,c) = image.shape
-		kmax=hmax
-		if hmax>wmax: kmax=wmax
-		objSize=[OBJ_ROWS, OBJ_COLS]
-		k=(OBJ_ROWS*3)  # anfangswert: Kantenlaenge des Rahmens
-		while k<kmax: # vergleich mit endwert
-			print("k= ", k)
-			for x in range (0, wmax-k, int(k/8)):
-				#t# print("- x= ", x)
-				for y in range (0, hmax-k, int(k/3)):
-					#t# print("-- y= ", y)
-					x1=x+k
-					y1=y+k
-					objImg=image[y:y1,x:x1]
-				
-					img=array_to_img(objImg, data_format = "channels_last")
-					normImg=img.resize(objSize)     # Standardgroesse herstellen
-					objImg=img_to_array(normImg, data_format = "channels_last") ### als Numphy-Array
-					prediction, probability, predictionComment= cnn.predictImage(objImg)
-					#t# self.saveArry(objImg, "x_objImg"+str(k)+str(x)+str(y)+"p"+str(probability))
-					if probability > 0.97 and prediction<43: # ab 43 ist trash
-						cv2.rectangle(frameObjImage,(x,y),(x1,y1),(0,0,255),1)
-						#t#self.saveArry(objImg, "y_np"+str(k)+"pd"+str(prediction)+"p"+str(probability))
-						#t#time.sleep(30)
-						
-					if probability > 0.99 and prediction<43:
-						cv2.rectangle(frameObjImage,(x,y),(x1,y1),(0,255,0),1)
-						print("PROBABILITY: ", probability)
-						self.saveArry(objImg, "z_np"+str(k)+"pd"+str(prediction)+"p"+str(probability))
-						self.saveArry(img, "z_im"+str(k)+"pd"+str(prediction)+"p"+str(probability))
-						#cv2.imshow("objects: "+str(probability), objImg)
-						#t#time.sleep(30)
-			k=k+int(k/3) # schrittweite variabel, daher keine Zaehlschleife
-		
-		self.saveArry(image,name="u_image")
-		return frameObjImage
-			
+	
+	''' Methoden der Klasse
+	Hilfsmethoden zum Speichern'''
+	
 	def saveArry(self, nparray, name="nparray"):
 		image=array_to_img(nparray, data_format = "channels_last")
 		image.save("./resultImg/"+name+".jpg")
@@ -149,9 +91,6 @@ class Prediction:
 	def saveImg(self, image, name="nparray"):
 		image.save("./resultImg/"+name+".jpg")
 	
-	
-	''' Methoden der Klasse
-	## a) Hilfsmethoden
 	# Speichert ein Bild der Trainings-Menge mit Index'''
 	def saveBild(self, imageIndex):  ## for test
 		(self.imagesTrain, self.labelsTrain), (self.imagesTest, self.labelsTest) = mnist.load_data()

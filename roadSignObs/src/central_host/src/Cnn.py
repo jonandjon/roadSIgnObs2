@@ -45,8 +45,8 @@ lrate = 0.01
 verbose_train = 1 # 2
 verbose_eval = 0
 
-''' Simple Convolutional Neural Network cifar10
-     Farbbilder mit 32 x 32 pixel'''   		
+''' Simple and Large Convolutional Neural Network CNN
+    Farbbilder mit shape 32 x 32 x 3 pixel '''   		
 class Gtsrb:
 	''' Konstruktor prueft ob Modell bereits treniert '''
 	def __init__(self, OBJ_ROWS, OBJ_COLS):
@@ -61,20 +61,13 @@ class Gtsrb:
 		except:
 			print("-> Modelltraining wird durchgefuehrt!")
 			self.modified()
-
-	'''
-	Quelle: http://benchmark.ini.rub.de/index.php?section=gtsrb&subsection=dataset
-		https://matplotlib.org/users/installing.html
-	sample code for reading the traffic sign images and the	corresponding labels
-	# example:	         
-	trainImages, trainLabels = readTrafficSigns('GTSRB/Training')
-	print len(trainLabels), len(trainImages)
-	plt.imshow(trainImages[num_classes])
-	plt.show()'''
+	
 	''' function for reading the images
 	Reads train traffic sign data for German Traffic Sign Recognition Benchmark.
 	Arguments: path to the traffic sign data, for example './GTSRB/Training'
 	Returns:   list of images, list of corresponding labels'''
+	'''siehe auch: http://benchmark.ini.rub.de/index.php?section=gtsrb&subsection=dataset
+		       https://matplotlib.org/users/installing.html'''
 	''' Modifiziert: J. H 12.2018'''
 	def readTrafficSigns(self, rootpath="./TrainingImages", subDirNo=num_classes):
 		npImages = [] # images
@@ -179,7 +172,7 @@ class Gtsrb:
 		self.model.save_weights(fileName+".h5")
 		print("----------------------")
 		
-	''' Laedt json-Modell 
+	''' Laedt Modell (*.json, *.h5) 
 	https://machinelearningmastery.com/save-load-keras-deep-learning-models/'''
 	def loadModel(self, fileName="cnnGtsrbModel"):
 		print("Loaded model from disk")
@@ -250,11 +243,6 @@ class Gtsrb:
 		#t# print(probabilities)
 		probability=np.amax(probabilities, axis=None, out=None) # Maximalwert, Axsenunabhaengig
 		probabilitySort=np.sort(probabilities, axis=None)[::-1] # absteigend sortieren
-		predictionComment='SICHER' ## Wertung		
-		if probability <0.97: predictionComment = "UNSICHER"
-		if probability <0.90: predictionComment = "SEHR UNSICHER"
-		if probability <0.85: predictionComment = "TRASH"
-		predictionComment="%13s (p: %-5.3f):" % (predictionComment, probability,)
 		#t# print("probabilities Sort: ")
 		#t# print(probabilitySort)
 		# output
@@ -263,8 +251,7 @@ class Gtsrb:
 		print("second probability  : ", probabilitySort[1])
 		print("third probability   : ", probabilitySort[2])
 		print("===========================================")
-
-		return  prediction, probability, predictionComment	
+		return  prediction, probability	
 		
 
 	
