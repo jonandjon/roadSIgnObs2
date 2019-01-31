@@ -6,7 +6,7 @@ import rospy
 #-# from keras.datasets import mnist
 from keras.preprocessing.image import ImageDataGenerator, array_to_img, img_to_array, load_img # for roadSignObs
 from sensor_msgs.msg import CompressedImage
-from std_msgs.msg import Bool, Int32
+from std_msgs.msg import String, Bool, Int32
 from PIL import Image
 # from threading import Thread
 import threading
@@ -24,11 +24,10 @@ img_rows, img_cols = 32, 32  # input image dimensions
 PAUSE = 5000 # Millisekunden
 PUBLISH_RATE = 3 # fuer WebCam in Hz
 USE_WEBCAM=False # True: WebCam, False: Strassenszenen aus dem Verzeichnis street
-USE_COLORDETECT=True  # True: take detect per colorfilter, False: take image direct
-# Instanz der Klasse ...
-if USE_COLORDETECT: objectSign=Detector.ColorFilter()
-else:		objectSign=Detector.NormImages()
+VERBOSE=False
 
+# Instanz der Klasse ...
+detectObj=Detector.ColorFilter() # detectObj
 
 # nur fuer Testzwecke benoetigt
 ANALYSEBILD="objDetect/street/mitEinfahrtVerboten.jpg"  #"eineAusfahrt" #"mitKreuzung.jpg"#"mitEinfahrtVerboten.png"#eineAusfahrt #mitHalteverbot
@@ -41,18 +40,24 @@ class PublishWebCam:
 		self.publisher_webcam_comprs = rospy.Publisher("/camera/output/webcam/compressed_img_msgs",
                                                        CompressedImage,
                                                        queue_size=1)
-													   
-		# publish Frame
-		self.publisher_fullcam_comprs = rospy.Publisher("/fullcamera/output/webcam/compressed_img_msgs",
-                                                       CompressedImage,
-                                                       queue_size=1)												
-
+						       
+		## empfaengt auch Infos zur Vorhersage prediction, probability, comment
+		self.callbackRoadSignPrediction=rospy.Subscriber(name='/camera/output/specific/prediction',
+				data_class=String,
+				callback=self.callbackRoadSignPrediction,
+				queue_size = 1) ## 					
+		
 		if USE_WEBCAM==True:
 			self.input_stream = cv2.VideoCapture(0)
 			if not self.input_stream.isOpened():
 				raise Exception('Camera stream did not open\n')
         rospy.loginfo("Publishing data...")
+		
 #--------------------------------------------------------------------------------------
+	''' Empfaengt das Vorhersageergebnis zur eigenen Verwendung'''
+	def callbackRoadSignPrediction(self, predictionStr):
+		detectObj.setPredictionStr(predictionStr) # wird an Klasse weitergereicht
+
 	# liest ein zufaellige Strassen-Bilddateien -----------------------------------
 	def readRoadPictures(self, rootpath="./objDetect/street/"):
 		namesPictures = [] # images
@@ -74,36 +79,35 @@ class PublishWebCam:
 			# See README.md for further information
 			if USE_WEBCAM==True:
 				print("WEBCAM is true!")
-				# Methode zum veroeffentlichen des Vollbildes 
+				# Methode liefert Vollbild der WebCam 
 				camFrame=self.getCamFrame(verbose)
 				rate.sleep() 
-				allObjImages=objectSign.inFrame(camFrame)
+				allObjImages, frameObjImage =detectObj.inFrame(camFrame)
 				#fuer TEST# cv2.imwrite("objDetect/street/camFrame.png", camFrame)  #+++
 				#         # cv2.imshow('camFrame in PublishCam', camFrame)
 			else:  	# Strassenszenen aus Verzeichnis objDetect/street
 				namesPictures=self.readRoadPictures() #rootpath="./TestImages"
 				zufallsindex=random.randint(0, len(namesPictures)-1) #+++
-				allObjImages=objectSign.inImages(namesPictures[zufallsindex])  #
+				allObjImages, frameObjImage=detectObj.inImages(namesPictures[zufallsindex])  #u0,v0,u1,v1
+				
 			for img in allObjImages:
-				#+# self.saveAsPPM(npImage=img, pfad='ABLAGE/') # zum Testen
+				#t# self.saveAsPPM(npImage=img, pfad='ABLAGE/') # zum Testen
 				self.publish_camresize(img)
-				#+time.sleep(PAUSE/1000)
-				cv2.waitKey(PAUSE) 
+				if VERBOSE: cv2.imshow("object frame image: "+"WebCam", frameObjImage)	
+				cv2.waitKey(PAUSE)
 			#+time.sleep(PAUSE/3000) # zusaetzliche Pause nach jedem big Picture
 			cv2.destroyAllWindows() #*#
 	
-	''' Sendet Vollbilder der Webcam fortlaufend 
-	    OPTIONAL  '''
+	''' Sendet Vollbilder der Webcam fortlaufend  '''
 	def getCamFrame(self, verbose=0):
 		if self.input_stream.isOpened() and USE_WEBCAM:
 			success, frame = self.input_stream.read()
 			msg_frame = self.cv_bridge.cv2_to_compressed_imgmsg(frame)
-			# -> Uebertragung der vollstaendigen-Camera-Bilder
-			#OPTIONAL# self.publisher_fullcam_comprs.publish(msg_frame.header, msg_frame.format, msg_frame.data)
 			if verbose:
 				rospy.loginfo(msg_frame.header.seq)
 				rospy.loginfo(msg_frame.format)
 		return frame
+	
 	
 	''' Sendet skaliertes Bild der WebCam '''
 	''' Methode alternativ als Thread https://www.python-kurs.eu/threads.php '''	
@@ -111,10 +115,9 @@ class PublishWebCam:
 		size=[img_rows, img_cols]
 		try:
 			print("obj publish", (int(time.time()))) # Kontrollausgabe
-			if USE_COLORDETECT: # Objekte auf 32x32 skalieren
-				image=array_to_img(img)
-				jpgNormImage=image.resize(size)     # Standardgroesse herstellen
-				img=img_to_array(jpgNormImage, data_format = "channels_last") ### als Numphy-Array
+			image=array_to_img(img)
+			jpgNormImage=image.resize(size)     # Standardgroesse herstellen
+			img=img_to_array(jpgNormImage, data_format = "channels_last") ### als Numphy-Array
 			#-# cv2.imshow('PublishCam', npImage) ###Kontrolle
 			compressed_imgmsg = self.cv_bridge.cv2_to_compressed_imgmsg(img)
 			# -> Sendet  Bild 

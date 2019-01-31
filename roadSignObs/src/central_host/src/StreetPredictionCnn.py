@@ -81,7 +81,7 @@ class Prediction:
 		kmax=hmax
 		if hmax>wmax: kmax=wmax
 		objSize=[OBJ_ROWS, OBJ_COLS]
-		k=(OBJ_ROWS*3)  # anfangswert: Kantenlaenge des Rahmens
+		k=(OBJ_ROWS*2)  # anfangswert: Kantenlaenge des Rahmens
 		while k<kmax: # vergleich mit endwert
 			print("k= ", k)
 			for x in range (0, wmax-k, int(k/8)):

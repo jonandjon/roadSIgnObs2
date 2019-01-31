@@ -44,10 +44,10 @@ class SubscribCar:
 			queue_size = 1)  
 
 	## ----------------------------------------------------------------------------------------------
-	def callbackRoadSignPrediction(self, roadSignComment):
-		predictionNumber,comment=roadSignComment.data.split("|") # zerlege String
+	def callbackRoadSignPrediction(self, predictionStr):
+		predictionNumber, probability, comment=predictionStr.data.split("|") # zerlege String
 		label=self.readReferenz(predictionNumber) # hole Beschreibung
-		print("Label of the predicted road sign: %2s : %s %s" % (predictionNumber, comment, label))
+		print("Label of the predicted road sign: %2s : %13s(%-5.3f) %s" % (predictionNumber, comment, float(probability), label))
 
 	def callbackRoadSignImage(self, roadSignImage):
 	     # Ausgabe als Bild

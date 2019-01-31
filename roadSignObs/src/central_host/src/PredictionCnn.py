@@ -36,7 +36,7 @@ class Prediction:
 		print("Hier ist der Prediction-Konstruktor")
 		
 						 
-		## publish back the prediction images '/camera/input/specific/comment
+		## publish the prediction | probability | predictionComment '/camera/input/specific/comment
 		self.publisherPrediction = rospy.Publisher("/camera/output/specific/prediction",
 								 String,
 								 queue_size=1)								
@@ -66,16 +66,13 @@ class Prediction:
 		print("Objektbild im Format (shape): ", h, w, c)
 		## Bildbewertung
 		prediction, probability = cnn.predictImage(np_image)
-		
-		predictionComment='SICHER' ## Wertung		
-		if probability <0.97: predictionComment = "UNSICHER"
-		if probability <0.90: predictionComment = "SEHR UNSICHER"
+		if prediction<43:predictionComment='SICHER' ## Wertung		
+		if probability <0.97 and prediction<43: predictionComment = "UNSICHER"
+		if probability <0.90 and prediction<43: predictionComment = "SEHR UNSICHER"
 		if probability <0.85: predictionComment = "TRASH"
-		predictionComment="%13s (p: %-5.3f):" % (predictionComment, probability,)
-		#+
-		prediction= str(prediction) + "|"+ predictionComment # Eine Uebertragung -> SYNCHRON
+		predictionStr= str(prediction) + "|"+ str(probability) + "|"+ predictionComment # Eine Uebertragung -> SYNCHRON
 		# Sende Prediction-Label und das dazugehoerige Bild zurueck #
-		self.publisherPrediction.publish(prediction)
+		self.publisherPrediction.publish(predictionStr)
 		#t# cv2.imshow('object images in Prediction', image_np) ## test
 		self.publisherPredictionImage.publish(Cam) # wird nur weitergereicht
 		cv2.waitKey(10)

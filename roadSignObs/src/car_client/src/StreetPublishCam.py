@@ -19,7 +19,7 @@ import random
 import time 
 
 img_rows, img_cols = 32, 32  # input image dimensions
-PAUSE = 5000 # Millisekunden
+PAUSE = 10000 # Millisekunden
 PUBLISH_RATE = 3 # fuer WebCam in Hz
 USE_WEBCAM=False # True: WebCam, False: Strassenszenen aus dem Verzeichnis street
 
@@ -30,7 +30,8 @@ class NormImages:
 	'''fuer Strassenbilder'''
 	def inImages(self, analysebildPfad="objDetect/street/mitKreisverkehr.png"): 
 		image=cv2.imread(analysebildPfad, 1)  # im bereinigten Bild wird gesucht und ggf. gefundene Objekte entfernt
-		sizeRoadPicture=(1280,720)
+		#sizeRoadPicture=(1280,720)
+		sizeRoadPicture=(800,450)
 		image=cv2.resize(image,sizeRoadPicture)  ## Standardgroesse herstellen
 		images=[]
 		images.append(image) #moeglicherweise kommt noch etwas dazu
@@ -39,7 +40,8 @@ class NormImages:
 		
 	'''In einer Webcam/Video'''
 	def inFrame(self, image): 
-		sizeRoadPicture=(1280,720)
+		#sizeRoadPicture=(1280,720)
+		sizeRoadPicture=(800,450)
 		image=cv2.resize(image,sizeRoadPicture)  ## Standardgroesse herstellen
 		images=[]
 		images.append(image) #moeglicherweise kommt noch etwas dazu
