@@ -27,37 +27,40 @@ from PIL import Image
 import time
 import os
 import csv ###
-
+'''
+Empfaengt Daten vom Modul Prediction und gibt diese aus. Dazu gehoeren eine Klassennummer, ein Wahrscheinlichkeitswert und
+	ein Kommentar. Zusaetzlich wir eine Beschreibung zur Klassennnumer in einer csv-Datei gelesen und ausgegeben.
+	Das Bild, welches klassifiziert werden sollte, wird enbenfalls ausgegeben'
+'''
 class SubscribCar:
 	def __init__(self):
-		self.cv_bridge = CvBridge()
 		print("Subscribe image and prediction number (Konstruktor)")
-
+		self.comment='' # Instanzvariable
+		self.cv_bridge = CvBridge()
 		self.callbackRoadSignPrediction=rospy.Subscriber(name='/camera/output/specific/prediction',
 			data_class=String,
 			callback=self.callbackRoadSignPrediction,
 			queue_size = 1) ## 
-			
 		self.subscribPredictionImage=rospy.Subscriber(name='camera/output/specific/compressed_img_msgs',
 			data_class=CompressedImage,
 			callback=self.callbackRoadSignImage,
 			queue_size = 1)  
 
-	## ----------------------------------------------------------------------------------------------
+	''' Empfaengt den Vorhersagestring '''
 	def callbackRoadSignPrediction(self, predictionStr):
-		predictionNumber, probability, comment=predictionStr.data.split("|") # zerlege String
+		predictionNumber, probability, self.comment=predictionStr.data.split("|") # zerlege String
 		label=self.readReferenz(predictionNumber) # hole Beschreibung
-		print("Label of the predicted road sign: %2s : %13s(%-5.3f) %s" % (predictionNumber, comment, float(probability), label))
-
+		print("Label of the predicted road sign: %2s : %13s(%-5.3f) %s" % (predictionNumber, self.comment, float(probability), label))
+	''' Empfaengt das Bild, das klassifiziert wurde '''
 	def callbackRoadSignImage(self, roadSignImage):
 	     # Ausgabe als Bild
 		np_array = np.fromstring(roadSignImage.data, np.uint8)
 		# cv2.CV_LOAD_IMAGE_COLOR #cv2.IMREAD_COLOR, cv2.COLOR_BGR2HSV, cv2.COLOR_BGR2GRAY
 		image_np = cv2.imdecode(np_array,  cv2.COLOR_RGB2HSV ) 
-		cv2.imshow('SubsribeCarCrt img', image_np)
+		cv2.imshow('SubsribCarCrt, Image: '+self.comment, image_np)
 		cv2.waitKey(10) #mindestens eine ms Pause
 	
-	# liest Kommentar zur erkannten Bildklasse--------------------------------
+	''' Liest Beschreibung zur erkannten Klasse'''
 	def readReferenz(self, roadSignNumber):
 		#label=""
 		gtFile = open('nummerBezeichnungReferenz.csv', "r" ) # annotations file
@@ -69,6 +72,7 @@ class SubscribCar:
 			if roadSignNumber == row[0]:
 				label= row[3]
 		gtFile.close()
+
 		return label	
 	# -------------------------------------------------------------------------------------------------
 def main():

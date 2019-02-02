@@ -21,18 +21,18 @@ import Detector
 ## import subDetect #IN WORK <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
 img_rows, img_cols = 32, 32  # input image dimensions
-PAUSE = 5000 # Millisekunden
+PAUSE = 3000 # Millisekunden
 PUBLISH_RATE = 3 # fuer WebCam in Hz
 USE_WEBCAM=False # True: WebCam, False: Strassenszenen aus dem Verzeichnis street
 VERBOSE=False
 
 # Instanz der Klasse ...
 detectObj=Detector.ColorFilter() # detectObj
-
-# nur fuer Testzwecke benoetigt
-ANALYSEBILD="objDetect/street/mitEinfahrtVerboten.jpg"  #"eineAusfahrt" #"mitKreuzung.jpg"#"mitEinfahrtVerboten.png"#eineAusfahrt #mitHalteverbot
-OBJEKTBILD="objDetect/objekt/kreisRot2.jpg"
-
+''' Veroeffentlicht Bildelemente bzw. Bildobjekte aus einer Strassenszenen. Die Klasse Detector bearbeitet vorab geladenen Strassenzenen
+   	mit Hilfe von Farbfilern, so dass typische, farblich markante Objekte erkannt werden. Dazu gehoeren auch Verkehrszeichen.
+	Die Bilder koennen auch von einer WebCam stammen. 
+	Liest die Antwort eines korrespondierenden Nodes. Es handelt sich um das Vorhersageergebnis (von Prediction) und
+	uebergibt diese Daten der Klasse Detector zur Verarbeitung. '''
 class PublishWebCam:
 	def __init__(self):
 		self.cv_bridge = CvBridge()
@@ -58,7 +58,7 @@ class PublishWebCam:
 	def callbackRoadSignPrediction(self, predictionStr):
 		detectObj.setPredictionStr(predictionStr) # wird an Klasse weitergereicht
 
-	# liest ein zufaellige Strassen-Bilddateien -----------------------------------
+	''' Liest ein zufaellige Strassen-Bilddateien '''
 	def readRoadPictures(self, rootpath="./objDetect/street/"):
 		namesPictures = [] # images
 		gtFile = open(rootpath + '/roadPictures.csv') # csv-Datei enthaelt Namen der zur Auswahl stehenden Bilddateien
@@ -89,7 +89,7 @@ class PublishWebCam:
 				namesPictures=self.readRoadPictures() #rootpath="./TestImages"
 				zufallsindex=random.randint(0, len(namesPictures)-1) #+++
 				allObjImages, frameObjImage=detectObj.inImages(namesPictures[zufallsindex])  #u0,v0,u1,v1
-				
+			#Aufloesen der Bilderliste und sequentielles versenden.	
 			for img in allObjImages:
 				#t# self.saveAsPPM(npImage=img, pfad='ABLAGE/') # zum Testen
 				self.publish_camresize(img)
@@ -109,8 +109,8 @@ class PublishWebCam:
 		return frame
 	
 	
-	''' Sendet skaliertes Bild der WebCam '''
-	''' Methode alternativ als Thread https://www.python-kurs.eu/threads.php '''	
+	''' Sendet skaliertes Bild der WebCam. 
+	    Methode alternativ als Thread https://www.python-kurs.eu/threads.php moeglich'''	
 	def publish_camresize(self, img):
 		size=[img_rows, img_cols]
 		try:
@@ -138,7 +138,7 @@ class PublishWebCam:
 		except:
 			print("kein Objektbild") 
 		
-	
+''' Hauptprogramm '''	
 def main():
 	verbose = 0  # use 1 for debug
 	# register node
