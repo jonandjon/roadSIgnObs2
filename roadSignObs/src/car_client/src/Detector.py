@@ -70,7 +70,7 @@ class ColorFilter:
 		# siehe Methode setPredictionStr() und Instanzvariablen im Konstruktor
 		try:	
 			cv2.imshow("street after prediction with TRASH", self.frameObjImage)
-			cv2.waitKey(3000) #Pause fur Trashanzeige
+			cv2.waitKey(10000) #Pause fur Trashanzeige
 		except:
 			pass
 		#sizeRoadPicture=(1280,720)
@@ -173,7 +173,12 @@ class ColorFilter:
 				if VERBOSEprio>1: print("Kein Objekt")
 				break
 		if VERBOSEprio>1: print(" detectContur ende")
-		return frameObjImage, filledObjImage, obj     
+		return frameObjImage, filledObjImage, obj 
+		
+
+
+
+		
 		
 
 			
