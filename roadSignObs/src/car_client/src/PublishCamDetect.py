@@ -33,7 +33,7 @@ detectObj=Detector.ColorFilter() # detectObj
 	Die Bilder koennen auch von einer WebCam stammen. 
 	Liest die Antwort eines korrespondierenden Nodes. Es handelt sich um das Vorhersageergebnis (von Prediction) und
 	uebergibt diese Daten der Klasse Detector zur Verarbeitung. '''
-class PublishWebCam:
+class PublishCam:
 	def __init__(self):
 		self.cv_bridge = CvBridge()
 		# publish webcam
@@ -144,7 +144,7 @@ def main():
 	# register node
 	rospy.init_node('PublishWebCam', anonymous=False)
 	# Instanz der Klasse (Publisher)
-	cam = PublishWebCam()
+	cam = PublishCam()
 	# start publishing data
 	cam.cam_data(verbose)
 	try:

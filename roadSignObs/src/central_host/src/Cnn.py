@@ -23,6 +23,7 @@ from keras.layers.convolutional import MaxPooling2D
 from keras.models import Sequential
 from keras.models import model_from_json ## https://machinelearningmastery.com/save-load-keras-deep-learning-models/
 from keras.utils import np_utils
+from keras.utils import plot_model
 from keras import optimizers
 from keras.constraints import maxnorm ## extend
 from keras.optimizers import SGD      ## extend
@@ -36,6 +37,7 @@ import matplotlib.pyplot as plt ###
 import csv ###
 import glob, os  ## img convert
 
+
 k.set_image_dim_ordering( 'th' )
 # params for all classes
 batch_size =256  ## 128
@@ -44,6 +46,8 @@ epochs = 44 ## 10 # 12 # 25  ## fuer Test Wert reduziert
 lrate = 0.01
 verbose_train = 1 # 2
 verbose_eval = 0
+''' Zwei Modelle stehen zur Verfuegung '''
+MODEL_NAME="scnnModel" #["scnnModel", "lcnnModel"] #  Auswahl ist zu setzen
 
 ''' Simple and Large Convolutional Neural Network CNN
     Farbbilder mit shape 32 x 32 x 3 pixel '''   		
@@ -57,7 +61,7 @@ class Gtsrb:
 		img_cols=OBJ_COLS
 		self.model = Sequential()
 		try:
-			self.loadModel()
+			self.loadModel(MODEL_NAME)
 		except:
 			print("-> Modelltraining wird durchgefuehrt!")
 			self.modified()
@@ -183,7 +187,7 @@ class Gtsrb:
 		# load weights into new model
 		self.model.load_weights(fileName+".h5")
 		return self.model
-	
+		
 	''' Simple Convolutional Neural Network Training  Modifiziert J.H'''
 	def modified(self): 
 		## 1a) Load Data ##
@@ -191,25 +195,57 @@ class Gtsrb:
 		num_classes = y_test.shape[1]
 		## 2) Define Baseline Model # build the model
 		#v# self.model = self.scnnModel(num_classes) # simpel model
-		self.model = self.lcnnModel(num_classes)		# large model
+		# # Anweisung wird zusammengestellt, je nach ausgewaehltem Modell
+		modelName="self.model=self."+MODEL_NAME+"(num_classes)" 
+		exec(modelName) 
 		# 3) Compile model
 		decay = lrate/epochs
 		sgd = SGD(lr=lrate, momentum=0.9, decay=decay, nesterov=False)
 		self.model.compile(loss='categorical_crossentropy', optimizer=sgd, metrics=['accuracy'])
 		self.model.summary()
 		## 4) Fit Model
-		##-# batch_size=512		
-		self.model.fit(X_train, y_train, validation_data=(X_test, y_test), epochs=epochs, batch_size=batch_size) 
+		history=self.model.fit(X_train, y_train, validation_data=(X_test, y_test), epochs=epochs, batch_size=batch_size) 
 		## 5) Evaluate Modell ##
-		#-# verbose_eval=0
 		scores = self.model.evaluate(X_test, y_test, verbose=verbose_eval)
 		## 6) Speichert Modell 
-		self.saveModel(fileName="cnnGtsrbModel")
+		self.saveModel(fileName=MODEL_NAME)
 		## ----------------------------------------
-		print(" Error(class Gtsrb, scnnModel)  : %.2f%%" % (100-scores[1]*100))
+		print(" Error(class Gtsrb, cnnModel)  : %.2f%%" % (100-scores[1]*100))
 		print(" Test accuracy            : %.2f%%" % (scores[1]*100,))
+		self.plotHistory(history) # Methode zur Visualisierung und zur Trainings-History
 		print()
-		
+	
+	''' Modelvisualisierung und Trainings-History '''
+	def plotHistory(self,history, pfad="./Plot/"):
+		# Visualisierung des Modells: https://keras.io/visualization/
+		plot_model(self.model, to_file=pfad+MODEL_NAME+'.png',show_shapes=True, show_layer_names=True)
+		#----------------------------------------
+		# Display Deep Learning Model Training History in Keras
+		# https://machinelearningmastery.com/display-deep-learning-model-training-history-in-keras/
+		# list all data in history
+		print(history.history.keys())
+		# summarize history for accuracy
+		plt.plot(history.history['acc'])
+		plt.plot(history.history['val_acc'])
+		plt.title('model accuracy - '+MODEL_NAME)
+		plt.ylabel('accuracy')
+		plt.xlabel('epoch')
+		plt.legend(['train', 'test'], loc='upper left')
+		plt.savefig(pfad+MODEL_NAME+'_accu.png')
+		# plt.show()
+		plt.close()
+		# summarize history for loss
+		plt.plot(history.history['loss'])
+		plt.plot(history.history['val_loss'])
+		plt.title('model loss - '+ MODEL_NAME)
+		plt.ylabel('loss')
+		plt.xlabel('epoch')
+		plt.legend(['train', 'test'], loc='upper left')
+		plt.savefig(pfad+MODEL_NAME+'_loss.png')
+		#plt.show()
+		plt.close()
+
+	
 	''' Bewertet ein einzelnes Bild aus der Testmenge, Quelle: Vorlesungsskript'''
 	def predictTestImage(self, index=7):
 		#t# print("--- print in predictionTestImage() ---")
