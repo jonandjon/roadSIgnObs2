@@ -23,11 +23,14 @@ PAUSE = 10000 # Millisekunden
 PUBLISH_RATE = 3 # fuer WebCam in Hz
 USE_WEBCAM=False # True: WebCam, False: Strassenszenen aus dem Verzeichnis street
 
-#Klasse zum Normen der hineingefuegten Bilder in dem Street -Ordner
+''' Klasse zum Normen der Bilder des Street-Ordners '''
 class NormImages:
 	def __init__(self):
 		print ("NormImages only")
-	'''fuer Strassenbilder'''
+	'''Fuer Strassenszenen-Bilder, Groesse wird angepasst
+	@param analysebildPfad - Pfad, Dtateiname zum Laden eines Strassenszenen-Bildes
+	@return images - Liste mit einem Bildern
+	'''
 	def inImages(self, analysebildPfad="objDetect/street/mitKreisverkehr.png"): 
 		image=cv2.imread(analysebildPfad, 1)  # im bereinigten Bild wird gesucht und ggf. gefundene Objekte entfernt
 		#sizeRoadPicture=(1280,720)
@@ -38,7 +41,11 @@ class NormImages:
 		#t# cv2.imshow("only image: "+analysebildPfad, image)
 		return images
 		
-	'''In einer Webcam/Video'''
+	'''Bild von einer Webcam (Groesse wird angepasst)
+	@param image - Bild
+	@param images - Liste mit einem Bildern
+	@return images - Liste mit einem Bild
+	'''
 	def inFrame(self, image): 
 		#sizeRoadPicture=(1280,720)
 		sizeRoadPicture=(800,450)
@@ -48,7 +55,7 @@ class NormImages:
 		#t# cv2.imshow("only image from WebCam: ", image)
 		return images		
 
-# Instanz der Klasse ...
+''' Instanz der Klasse ...'''
 objectSign=NormImages()
 
 class PublishWebCam:
@@ -71,7 +78,10 @@ class PublishWebCam:
 				raise Exception('Camera stream did not open\n')
         rospy.loginfo("Publishing data...")
 #--------------------------------------------------------------------------------------
-	''' liest ein zufaellige Strassen-Bilddateien '''
+	''' liest ein zufaelliges Strassen-Bild
+	@param rootpath - Pfad einer csv-Datei mit Metadaten der Bilder
+	@return namesPictures - Liste mit Namen der Bilde
+	'''
 	def readRoadPictures(self, rootpath="./objDetect/street/"):
 		namesPictures = [] # images
 		gtFile = open(rootpath + '/roadPictures.csv') # csv-Datei enthaelt Namen der zur Auswahl stehenden Bilddateien
@@ -84,7 +94,9 @@ class PublishWebCam:
 		gtFile.close()
 		return namesPictures 
 		
-	''' veroeffentlicht Daten '''
+	''' veroeffentlicht Daten 
+	@param verbose - steuert Debug-Ausgaben
+	'''
 	def cam_data(self, verbose=0):
 		rate = rospy.Rate(PUBLISH_RATE)  #Takrate wie oft ausgefuehrt wird?
 		while not rospy.is_shutdown():
@@ -116,8 +128,10 @@ class PublishWebCam:
 				#time.sleep(PAUSE/1000)
 				cv2.destroyAllWindows() #*#
 	
-	''' Sendet Vollbilder der Webcam fortlaufend 
-	    OPTIONAL  '''
+	''' Sendet Vollbilder der Webcam fortlaufend -   OPTIONAL  
+	@param verbose - steuert Debug-Ausgaben
+	@return frame - Bild einer WabCam
+	'''
 	def getCamFrame(self, verbose=0):
 		if self.input_stream.isOpened() and USE_WEBCAM:
 			success, frame = self.input_stream.read()
@@ -129,7 +143,10 @@ class PublishWebCam:
 				rospy.loginfo(msg_frame.format)
 		return frame
 	
-	'''Debugmethode Speichert ein nymphi-array als ppm-Bild '''	
+	'''Fuer Test: Speichert ein nymphi-array als ppm-Bild 
+	@param npImage - Bild
+	@param pfad - Speicherort fuer das Bild
+	'''	
 	def saveAsPPM(self, npImage, pfad='ABLAGE/img.ppm' ):
 		try:
 			b, g, r = cv2.split(npImage)

@@ -54,11 +54,15 @@ class PublishCam:
         rospy.loginfo("Publishing data...")
 		
 #--------------------------------------------------------------------------------------
-	''' Empfaengt das Vorhersageergebnis zur eigenen Verwendung'''
+	''' Empfaengt das Vorhersageergebnis zur eigenen Verwendung
+	@param predictionStr - Vorhersagenummer | Wahrscheinlichkeitswert | Kommentar
+	'''
 	def callbackRoadSignPrediction(self, predictionStr):
 		detectObj.setPredictionStr(predictionStr) # wird an Klasse weitergereicht
 
-	''' Liest ein zufaellige Strassen-Bilddateien '''
+	''' Liest ein zufaellige Strassen-Bilddateien
+	@param rootpath - Pfad des Strassenbildes
+	'''
 	def readRoadPictures(self, rootpath="./objDetect/street/"):
 		namesPictures = [] # images
 		gtFile = open(rootpath + '/roadPictures.csv') # csv-Datei enthaelt Namen der zur Auswahl stehenden Bilddateien
@@ -71,7 +75,9 @@ class PublishCam:
 		gtFile.close()
 		return namesPictures 
 		
-	''' veroeffentlicht Daten '''
+	''' veroeffentlicht Daten 
+	@param verbose - steuert Debug- und Print-Ausgaben 
+	'''
 	def cam_data(self, verbose=0):
 		rate = rospy.Rate(PUBLISH_RATE)
 		while not rospy.is_shutdown():
@@ -98,7 +104,10 @@ class PublishCam:
 			#+time.sleep(PAUSE/3000) # zusaetzliche Pause nach jedem big Picture
 			cv2.destroyAllWindows() #*#
 	
-	''' Sendet Vollbilder der Webcam fortlaufend  '''
+	''' Sendet Vollbilder der Webcam fortlaufend
+	@param verbose
+	@return - Bild, aufgenommen von einer WabCam
+	'''
 	def getCamFrame(self, verbose=0):
 		if self.input_stream.isOpened() and USE_WEBCAM:
 			success, frame = self.input_stream.read()
@@ -110,7 +119,9 @@ class PublishCam:
 	
 	
 	''' Sendet skaliertes Bild der WebCam. 
-	    Methode alternativ als Thread https://www.python-kurs.eu/threads.php moeglich'''	
+	    Methode alternativ als Thread https://www.python-kurs.eu/threads.php moeglich
+	@param img - Bild
+	'''	
 	def publish_camresize(self, img):
 		size=[img_rows, img_cols]
 		try:
@@ -125,7 +136,10 @@ class PublishCam:
 		except:
 			print("kein gueltiges Objekt") 
 			
-	''' Speichert ein nymphi-array als ppm-Bild'''	
+	''' Speichert ein nymphi-array als ppm-Bild
+	@param npImage - Bild 
+	@param pfad - Speicherort des Bildes
+	'''	
 	def saveAsPPM(self, npImage, pfad='ABLAGE/img.ppm' ):
 		try:
 			b, g, r = cv2.split(npImage)

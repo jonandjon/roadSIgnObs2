@@ -37,30 +37,41 @@ class SubscribCar:
 		print("Subscribe image and prediction number (Konstruktor)")
 		self.comment='' # Instanzvariable
 		self.cv_bridge = CvBridge()
+		# Subscriber fuer Vorhersage
 		self.callbackRoadSignPrediction=rospy.Subscriber(name='/camera/output/specific/prediction',
 			data_class=String,
 			callback=self.callbackRoadSignPrediction,
-			queue_size = 1) ## 
+			queue_size = 1) ##
+		#Subscriber fuer Objektbild, passend zur Vorhersage	
 		self.subscribPredictionImage=rospy.Subscriber(name='camera/output/specific/compressed_img_msgs',
 			data_class=CompressedImage,
 			callback=self.callbackRoadSignImage,
 			queue_size = 1)  
 
-	''' Empfaengt den Vorhersagestring '''
+	''' Empfaengt den Vorhersagestring 
+	@param predictionStr - Vorhersagenummer | Wahrscheinlichkeitswert | Kommentar
+	'''
 	def callbackRoadSignPrediction(self, predictionStr):
 		predictionNumber, probability, self.comment=predictionStr.data.split("|") # zerlege String
 		label=self.readReferenz(predictionNumber) # hole Beschreibung
 		print("Label of the predicted road sign: %2s : %13s(%-5.3f) %s" % (predictionNumber, self.comment, float(probability), label))
-	''' Empfaengt das Bild, das klassifiziert wurde '''
+	''' Empfaengt das Bild, das klassifiziert wurde
+	@param roadSignImage - Objektbild, Bild eines Verkehrszeichens
+	'''
 	def callbackRoadSignImage(self, roadSignImage):
 	     # Ausgabe als Bild
+		cv2.destroyAllWindows() #altes Bild loeschen
 		np_array = np.fromstring(roadSignImage.data, np.uint8)
 		# cv2.CV_LOAD_IMAGE_COLOR #cv2.IMREAD_COLOR, cv2.COLOR_BGR2HSV, cv2.COLOR_BGR2GRAY
 		image_np = cv2.imdecode(np_array,  cv2.COLOR_RGB2HSV ) 
 		cv2.imshow('SubsribCarCrt, Image: '+self.comment, image_np)
-		cv2.waitKey(10) #mindestens eine ms Pause
+		cv2.waitKey(50) #mindestens eine ms Pause - hier zur Kontrolle
+		
 	
-	''' Liest Beschreibung zur erkannten Klasse'''
+	''' Liest Beschreibung zur erkannten Klasse
+	@param roadSignNumber - Klassennummmer des Verkehrszeichenbildes
+	@return label - Beschreibung zur Klassennummer 
+	'''
 	def readReferenz(self, roadSignNumber):
 		#label=""
 		gtFile = open('nummerBezeichnungReferenz.csv', "r" ) # annotations file
@@ -72,7 +83,6 @@ class SubscribCar:
 			if roadSignNumber == row[0]:
 				label= row[3]
 		gtFile.close()
-
 		return label	
 	# -------------------------------------------------------------------------------------------------
 def main():

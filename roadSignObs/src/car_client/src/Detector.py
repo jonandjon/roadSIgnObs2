@@ -39,11 +39,13 @@ class ColorFilter:
 	def __init__(self):
 		print ("hier ist der Farb-Objekt-Detektor ")
 		self.iSync=0     # Index zur Synchronisation zwischen den Nods
-		self.frameObjImage=''
-		self.allObj = Objekt()
+		self.frameObjImage='' # Strassenszene als Bild mit umrandeten Objekten
+		self.allObj = Objekt() # Instanz der Objektstruktur
 	'''
 	Informationen von Prediction werden empfangen und ausgewertet.
-	Trash-Objekte werden markiert im frameObjImage und spaeter ausgegeben, in der Methode inFrame'''
+	Trash-Objekte werden markiert im frameObjImage und spaeter ausgegeben, in der Methode inFrame
+	@param predictionStr - Vorhersagenummer | Wahrscheinlichkeitswert | Kommentar
+	'''
 	def setPredictionStr(self, predictionStr):
 		predictionNumber, probability, comment=predictionStr.data.split("|") # zerlege String
 		if comment == "TRASH":
@@ -60,11 +62,19 @@ class ColorFilter:
 	analysebild - Strassenszene
 	return: frameObjektImage - Strassenszene mit Umrandeten Objekten
 	return: allObjImages     - Liste mit gefundenen Objekten  '''
-	''' - Laedt eine Strassenszene als Bild und schickt dieses gleich weiter '''
+	''' - Laedt eine Strassenszene als Bild und schickt dieses gleich weiter
+	@param analysebildPfad - Pfad/Dateiname des zu analysierenden Strazenszene (Bild)
+	@return Strassenszene als Bild	
+	'''
 	def inImages(self, analysebildPfad="objDetect/street/mitKreisverkehr.png"):
 		image=cv2.imread(analysebildPfad, 1)  # im bereinigten Bild wird gesucht und ggf. gefundene Objekte entfernt
 		return self.inFrame(image, bezeichnung="objDetect/street/mitKreisverkehr.png")
-	''' - WebCam liefert das Bild direkt '''
+	''' - WebCam liefert das Bild direkt 
+	@param image - Bild einer Strassenszene
+	@param bezeichnung - Bezeichnung fuer das Bild
+	@return self.allObj.images - Liste mit allen Objektbildern
+	@return self.frameObjImage - Strassenszene mit umrandeten Objekten
+	'''
 	def inFrame(self, image, bezeichnung="From WebCam"): # 
 		#Trash-Anzeige im Strassenbild (das ist etwas trickreich, da Ruckkoplung notwendig)
 		# siehe Methode setPredictionStr() und Instanzvariablen im Konstruktor
@@ -103,12 +113,12 @@ class ColorFilter:
 	''' Sucht nach Farbobjekten entsprechend der intern gesetzuten Filtern: rot, gelb, blau.
 	Pro Aufruf koennen pro Farbfilter kein oder ein Objekt gefunden werden.
 	#--- detect Kontur--- https://www.pyimagesearch.com/2015/06/22/install-opencv-3-0-and-python-2-7-on-ubuntu/
-	image - Ausgangsbild, das bleibt unveraendert
-	frameObjImage - Bild mit umrandeten Objekten
-	filledObjImage - Bild, in dem die bereits gefundenen Objekte getilgt (geloescht) sind.
-	return: frameObjImage -  Bild mit weiteren umrandeten Objekten
-	return: filledObjImage - Bild, in dem die gefundenen Objekte getilgt sind.
-	return: objImages      - gefundene Objekte waehrend dieses Durchlaufs    	'''
+	@param image - Ausgangsbild, das bleibt unveraendert
+	@param frameObjImage - Bild mit umrandeten Objekten
+	@param filledObjImage - Bild, in dem die bereits gefundenen Objekte getilgt (geloescht) sind.
+	@return: frameObjImage -  Bild mit weiteren umrandeten Objekten
+	@return: filledObjImage - Bild, in dem die gefundenen Objekte getilgt sind.
+	@return: obj      - gefundene Objekte waehrend dieses Durchlaufs    	'''
 	def detectContur(self,image, frameObjImage,filledObjImage):	#image
 		obj = Objekt()
 		# Farbgrenzwerte  b, g, r

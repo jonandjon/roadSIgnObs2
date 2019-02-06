@@ -54,7 +54,9 @@ class Prediction:
 							queue_size = 1)
 		
 							
-	''' Verarbeitet ein Objektbild 32x32 Pixel '''											
+	''' Verarbeitet ein Objektbild 32x32 Pixel
+	@param Cam - Bild, Cam-Bild
+	'''											
 	def callbackObjImage(self, Cam):
 		# print ('CALLBECK: object images of type: "%s"' % Cam.format)
 		np_arr = np.fromstring(Cam.data, np.uint8)
@@ -80,7 +82,6 @@ class Prediction:
 	
 	''' Methoden der Klasse
 	Hilfsmethoden zum Speichern'''
-	
 	def saveArry(self, nparray, name="nparray"):
 		image=array_to_img(nparray, data_format = "channels_last")
 		image.save("./resultImg/"+name+".jpg")

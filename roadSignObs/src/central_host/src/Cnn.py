@@ -47,7 +47,7 @@ lrate = 0.01
 verbose_train = 1 # 2
 verbose_eval = 0
 ''' Zwei Modelle stehen zur Verfuegung '''
-MODEL_NAME="scnnModel" #["scnnModel", "lcnnModel"] #  Auswahl ist zu setzen
+MODEL_NAME="lcnnModel" #["scnnModel", "lcnnModel"] #  Auswahl ist zu setzen
 
 ''' Simple and Large Convolutional Neural Network CNN
     Farbbilder mit shape 32 x 32 x 3 pixel '''   		
@@ -72,7 +72,11 @@ class Gtsrb:
 	Returns:   list of images, list of corresponding labels'''
 	'''siehe auch: http://benchmark.ini.rub.de/index.php?section=gtsrb&subsection=dataset
 		       https://matplotlib.org/users/installing.html'''
-	''' Modifiziert: J. H 12.2018'''
+	''' Modifiziert: J. H 12.2018
+	@param rootpath - Pfad fuer die Trainingsbilder
+	@param subDirNo - Anzahl der Klassen
+	@return Trainingsdaten-Paar, Testdaten-Paar (jeweils als Liste)
+	'''
 	def readTrafficSigns(self, rootpath="./TrainingImages", subDirNo=num_classes):
 		npImages = [] # images
 		labels = [] # corresponding labels
@@ -103,7 +107,9 @@ class Gtsrb:
 		print("Train set size: {0}, Test set size: {1}". format(len(X_train), len(X_test)))
 		return (X_train, y_train), (X_test, y_test)	
 
-	'''## Load Data and normalize this  J.Heinke  '''	
+	'''## Load Data and normalize this  J.Heinke
+	@return Trainingsdaten-Paar, Testdaten-Paar (jeweils als Liste)
+	'''
 	def loadData(self):
 		seed = 7 		# fix random seed for reproducibility
 		np.random.seed(seed)
@@ -129,7 +135,10 @@ class Gtsrb:
 		#-# print("  y_test-Matrix: ", y_test[6]) ## 
 		return (X_train, y_train), (X_test, y_test)
 
-	''' 2) Define simple cnn Model Quelle: Develop Deep learning ..., Brownlee'''
+	''' 2) Define simple cnn Model Quelle: Develop Deep learning ..., Brownlee
+	@param subDirNo - Anzahl der Klassen
+	@return - Trainingsmodell
+	'''
 	def scnnModel(self, num_classes):
 		self.model.add(Conv2D((32), (3, 3), input_shape=(img_rows, img_cols,3),activation='relu', kernel_constraint=maxnorm(max_value=3)))
 		self.model.add(Dropout(0.2))
@@ -141,7 +150,10 @@ class Gtsrb:
 		self.model.add(Dense(units=num_classes, activation='softmax'))
 		return self.model
 		
-	''' 2to) Define large cnn Model, Quelle: Brownlww'''
+	''' 2to) Define large cnn Model, Quelle: Brownlww
+	@param subDirNo - Anzahl der Klassen
+	@return - Trainingsmodell
+	'''
 	def lcnnModel(self, num_classes):
 		self.model.add(Conv2D(32, (3, 3), input_shape=(img_rows, img_cols,3), activation= 'relu' , padding= 'same' ))
 		self.model.add(Dropout(0.2))
@@ -165,7 +177,9 @@ class Gtsrb:
 		return self.model
 	
 	''' Speichert die Modellparameter und das Modell
-	--- https://machinelearningmastery.com/save-load-keras-deep-learning-models/'''
+	--- https://machinelearningmastery.com/save-load-keras-deep-learning-models/
+	@param fileName - Pfad, Dateiname, mit dem das Modell gespeichert wird
+	'''
 	def saveModel(self, fileName="cnnGtsrbModel"):
 		print("Saved model.h5 to disk")
 		### serialize model to JSON
@@ -177,7 +191,9 @@ class Gtsrb:
 		print("----------------------")
 		
 	''' Laedt Modell (*.json, *.h5) 
-	https://machinelearningmastery.com/save-load-keras-deep-learning-models/'''
+	https://machinelearningmastery.com/save-load-keras-deep-learning-models/
+	@param fileName - Pfad, Dateiname, mit dem das Modell geladen wird
+	'''
 	def loadModel(self, fileName="cnnGtsrbModel"):
 		print("Loaded model from disk")
 		json_file = open(fileName+'.json', 'r')
@@ -204,7 +220,8 @@ class Gtsrb:
 		self.model.compile(loss='categorical_crossentropy', optimizer=sgd, metrics=['accuracy'])
 		self.model.summary()
 		## 4) Fit Model
-		history=self.model.fit(X_train, y_train, validation_data=(X_test, y_test), epochs=epochs, batch_size=batch_size) 
+		history=self.model.fit(X_train, y_train, validation_data=(X_test, y_test), epochs=epochs, batch_size=batch_size)
+		##history=self.model.fit(X_train, y_train, validation_split=0.33, epochs=epochs, batch_size=batch_size, verbose=0)		
 		## 5) Evaluate Modell ##
 		scores = self.model.evaluate(X_test, y_test, verbose=verbose_eval)
 		## 6) Speichert Modell 
@@ -215,7 +232,12 @@ class Gtsrb:
 		self.plotHistory(history) # Methode zur Visualisierung und zur Trainings-History
 		print()
 	
-	''' Modelvisualisierung und Trainings-History '''
+	''' Modelvisualisierung und Trainings-History
+	https://keras.io/visualization/#training-history-visualization
+	https://keras.rstudio.com/articles/training_visualization.html
+	@param history - Abbild des Trainingsvorgangs
+	@param pfad - Speicherort der Grafiken
+	'''
 	def plotHistory(self,history, pfad="./Plot/"):
 		# Visualisierung des Modells: https://keras.io/visualization/
 		plot_model(self.model, to_file=pfad+MODEL_NAME+'.png',show_shapes=True, show_layer_names=True)
@@ -226,11 +248,11 @@ class Gtsrb:
 		print(history.history.keys())
 		# summarize history for accuracy
 		plt.plot(history.history['acc'])
-		plt.plot(history.history['val_acc'])
+		plt.plot(history.history['val_acc'], label='Test')
 		plt.title('model accuracy - '+MODEL_NAME)
 		plt.ylabel('accuracy')
 		plt.xlabel('epoch')
-		plt.legend(['train', 'test'], loc='upper left')
+		plt.legend(['training', 'validation'],loc='upper left')
 		plt.savefig(pfad+MODEL_NAME+'_accu.png')
 		# plt.show()
 		plt.close()
@@ -240,13 +262,16 @@ class Gtsrb:
 		plt.title('model loss - '+ MODEL_NAME)
 		plt.ylabel('loss')
 		plt.xlabel('epoch')
-		plt.legend(['train', 'test'], loc='upper left')
+		plt.legend(['training', 'validation'], loc='upper right')
 		plt.savefig(pfad+MODEL_NAME+'_loss.png')
 		#plt.show()
 		plt.close()
 
 	
-	''' Bewertet ein einzelnes Bild aus der Testmenge, Quelle: Vorlesungsskript'''
+	''' Bewertet ein einzelnes Bild aus der Testmenge, Quelle: Vorlesungsskript
+	@param index - Indes des Testbildes
+	@return - Klassennummer des Testbildes, Prognosewert
+	'''
 	def predictTestImage(self, index=7):
 		#t# print("--- print in predictionTestImage() ---")
 		## 1a) Load Data, da ggf. noch nicht geladen ##
@@ -266,7 +291,10 @@ class Gtsrb:
 		#print("real label          : %s" % (input_label,))
 		return input_label, prediction
 		
-	''' Bewertet ein einzelnes Bild, Modifiziert J.H '''
+	''' Bewertet ein einzelnes Bild, Modifiziert J.H 
+	@param - input_data - Bild fuer das eine Prognose vorgenommen wird
+	@return - Prognosewert und Wahrscheinlichkeitswert fuer die vorgenommen Prognose
+	'''
 	def predictImage(self, input_data):
 		input_data = np.expand_dims(input_data, axis=0)  # tensorflow + 1 dimension
 		input_data = np.asarray(input_data).astype(np.float32) / 255.0 # j.j

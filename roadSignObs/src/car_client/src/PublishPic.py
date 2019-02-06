@@ -29,7 +29,10 @@ class publishpic:
 										CompressedImage,queue_size=1)
 		 
 	
-	# liest Bilddateien -----------------------------------
+	'''liest Bilddateien
+	@param rootpath - Pfad, aus dem Bilder geladen werden
+	@return npImages - Bild
+	'''
 	def readSigns(self, rootpath="./TestImages"):
 		size=[img_rows,img_cols]
 		npImages = [] # images
@@ -50,7 +53,10 @@ class publishpic:
 		gtFile.close()
 		return npImages 
 		
-	# liefert zufaeliges Bild aus Bildersammlung	
+	''' liefert zufaeliges Bild aus Bildersammlung
+	@param images - Liste mit Bildern
+	@return image - Bild, das zufaellig aus der Bilderliste ausgewaehlt wurde
+	'''
 	def getRandomImages(self, images):
 		zufallsindex=random.randint(0, len(images)-1)
 		# print("Zufallsindex of Images: %d" %  zufallsindex) 
@@ -58,7 +64,10 @@ class publishpic:
 		print ('Image: '+format(zufallsindex, '05d')+'.ppm')
 		return image 
 	
-	## veroeffentlicht Daten
+	''' veroeffentlicht Daten
+	@param image - Bild
+	@para verbose - steuert Testausgabe
+	'''
 	def publishPicture(self, image, verbose=0):
         	# convert 
         	compressed_imgmsg = self.cv_bridge.cv2_to_compressed_imgmsg(image)
@@ -68,7 +77,6 @@ class publishpic:
         	if verbose:
 			rospy.loginfo(compressed_imgmsg.header.seq)
 			rospy.loginfo(compressed_imgmsg.format)
-				
 	
 def main():
 	verbose = 0  # use 1 for debug
