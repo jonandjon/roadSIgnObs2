@@ -94,7 +94,8 @@ class PublishCam:
 			else:  	# Strassenszenen aus Verzeichnis objDetect/street
 				namesPictures=self.readRoadPictures() #rootpath="./TestImages"
 				zufallsindex=random.randint(0, len(namesPictures)-1) #+++
-				allObjImages, frameObjImage=detectObj.inImages(namesPictures[zufallsindex])  #u0,v0,u1,v1
+				allObjImages, frameObjImage=detectObj.inImages(namesPictures[zufallsindex]) 
+				#allObjImages, frameObjImage=detectObj.inImages(namesPictures[4]) 	#test#			#u0,v0,u1,v1
 			#Aufloesen der Bilderliste und sequentielles versenden.	
 			for img in allObjImages:
 				#t# self.saveAsPPM(npImage=img, pfad='ABLAGE/') # zum Testen
